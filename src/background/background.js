@@ -19,6 +19,9 @@ let activeSessions = new Map();
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('🚀 Claude AI Assistant 설치됨:', details.reason);
   
+  // TextContextManager 먼저 초기화 (독립적)
+  await initializeTextContextManager();
+  
   // 기본 설정 초기화
   await initializeDefaultSettings();
   
@@ -32,7 +35,10 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.onStartup.addListener(async () => {
   console.log('🔄 Claude AI Assistant 시작됨');
   
-  // API Key가 있는지 확인 후 초기화
+  // TextContextManager 먼저 초기화 (독립적)
+  await initializeTextContextManager();
+  
+  // API Key가 있는지 확인 후 Bedrock 클라이언트 초기화
   try {
     const result = await chrome.storage.sync.get(['bedrockApiKey']);
     if (result.bedrockApiKey) {
@@ -77,16 +83,37 @@ async function initializeBedrockClient() {
     await bedrockClient.initialize();
     console.log('✅ Bedrock 클라이언트 초기화 성공');
     
-    // TextContextManager 초기화
-    if (!textContextManager) {
-      textContextManager = new TextContextManager();
-      console.log('✅ TextContextManager 초기화 완료');
-    }
-    
     return true;
   } catch (error) {
     console.warn('⚠️ Bedrock 클라이언트 초기화 실패:', error.message);
     bedrockClient = null;
+    return false;
+  } finally {
+    // TextContextManager는 bedrockClient와 독립적으로 초기화
+    if (!textContextManager) {
+      try {
+        textContextManager = new TextContextManager();
+        console.log('✅ TextContextManager 초기화 완료');
+      } catch (error) {
+        console.error('❌ TextContextManager 초기화 실패:', error);
+        textContextManager = null;
+      }
+    }
+  }
+}
+
+/**
+ * TextContextManager 독립 초기화
+ */
+async function initializeTextContextManager() {
+  try {
+    if (!textContextManager) {
+      textContextManager = new TextContextManager();
+      console.log('✅ TextContextManager 독립 초기화 완료');
+    }
+    return true;
+  } catch (error) {
+    console.error('❌ TextContextManager 초기화 실패:', error);
     textContextManager = null;
     return false;
   }
