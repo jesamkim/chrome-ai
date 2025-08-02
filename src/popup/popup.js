@@ -262,21 +262,7 @@ class PopupManager {
       }
 
       // Content Script에서 페이지 내용 추출
-      let pageContent;
-      try {
-        const contentResponse = await chrome.tabs.sendMessage(tab.id, {
-          type: 'EXTRACT_PAGE_CONTENT'
-        });
-        
-        if (contentResponse && contentResponse.success) {
-          pageContent = contentResponse.content;
-        } else {
-          throw new Error('페이지 내용을 추출할 수 없습니다.');
-        }
-      } catch (contentError) {
-        console.warn('⚠️ Content Script 응답 없음, 기본 정보 사용');
-        pageContent = `페이지 제목: ${tab.title}\nURL: ${tab.url}`;
-      }
+      const pageContent = await this.extractPageContent(tab);
 
       // Background Script에 분석 요청
       const response = await chrome.runtime.sendMessage({
@@ -329,21 +315,7 @@ class PopupManager {
       }
 
       // Content Script에서 페이지 내용 추출
-      let pageContent;
-      try {
-        const contentResponse = await chrome.tabs.sendMessage(tab.id, {
-          type: 'EXTRACT_PAGE_CONTENT'
-        });
-        
-        if (contentResponse && contentResponse.success) {
-          pageContent = contentResponse.content;
-        } else {
-          throw new Error('페이지 내용을 추출할 수 없습니다.');
-        }
-      } catch (contentError) {
-        console.warn('⚠️ Content Script 응답 없음, 기본 정보 사용');
-        pageContent = `페이지 제목: ${tab.title}\nURL: ${tab.url}`;
-      }
+      const pageContent = await this.extractPageContent(tab);
 
       // Background Script에 분석 요청
       const response = await chrome.runtime.sendMessage({
@@ -395,15 +367,23 @@ class PopupManager {
       // Background script에 메시지 전송
       const response = await chrome.runtime.sendMessage({
         type: 'CHAT_MESSAGE',
-        message: message,
-        history: this.chatHistory
+        data: {
+          messages: [
+            ...this.chatHistory,
+            { role: 'user', content: message }
+          ],
+          sessionId: 'popup-session',
+          options: {
+            maxTokens: 2000
+          }
+        }
       });
 
       // 타이핑 인디케이터 제거
       this.hideTypingIndicator();
 
       if (response && response.success) {
-        this.addMessageToChat('assistant', response.result);
+        this.addMessageToChat('assistant', response.response);
       } else {
         this.addMessageToChat('assistant', `죄송합니다. 오류가 발생했습니다: ${response?.error || '알 수 없는 오류'}`);
       }
@@ -440,7 +420,7 @@ class PopupManager {
         <div class="typing-dot"></div>
         <div class="typing-dot"></div>
       </div>
-      <span>Claude가 입력 중...</span>
+      <span>AI가 입력 중...</span>
     `;
 
     this.chatMessages?.appendChild(typingDiv);
@@ -486,7 +466,57 @@ class PopupManager {
     }
   }
 
-  // 기타 메서드들
+  // 공통 유틸리티 메서드들
+  generateBasicPageInfo(tab) {
+    const domain = new URL(tab.url).hostname;
+    return `페이지 제목: ${tab.title || '제목 없음'}
+URL: ${tab.url}
+도메인: ${domain}
+페이지 유형: ${this.getPageType(tab.url)}
+
+참고: 이 페이지는 Content Script가 로드되지 않아 기본 정보만 제공됩니다.
+더 자세한 분석을 위해서는 페이지를 새로고침하거나 다른 페이지에서 시도해보세요.`;
+  }
+
+  getPageType(url) {
+    if (url.startsWith('chrome://') || url.startsWith('chrome-extension://')) {
+      return '브라우저 내부 페이지';
+    } else if (url.startsWith('file://')) {
+      return '로컬 파일';
+    } else if (url.includes('github.com')) {
+      return 'GitHub 페이지';
+    } else if (url.includes('stackoverflow.com')) {
+      return 'Stack Overflow';
+    } else if (url.includes('wikipedia.org')) {
+      return 'Wikipedia';
+    } else {
+      return '웹 페이지';
+    }
+  }
+
+  async extractPageContent(tab) {
+    try {
+      // Content Script 응답 대기 시간 제한 (5초)
+      const contentResponse = await Promise.race([
+        chrome.tabs.sendMessage(tab.id, {
+          type: 'EXTRACT_PAGE_CONTENT'
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Content Script 응답 시간 초과')), 5000)
+        )
+      ]);
+      
+      if (contentResponse && contentResponse.success) {
+        console.log('✅ Content Script에서 페이지 내용 추출 성공');
+        return contentResponse.content;
+      } else {
+        throw new Error('페이지 내용을 추출할 수 없습니다.');
+      }
+    } catch (contentError) {
+      console.warn('⚠️ Content Script 응답 없음, 기본 정보 사용:', contentError.message);
+      return this.generateBasicPageInfo(tab);
+    }
+  }
   showHelp() {
     const helpUrl = chrome.runtime.getURL('src/options/help.html');
     chrome.tabs.create({ url: helpUrl });

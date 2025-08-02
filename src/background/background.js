@@ -218,6 +218,11 @@ async function handleTestConnection(sendResponse) {
  */
 async function handleChatMessage(data, sendResponse) {
   try {
+    // 데이터 유효성 검사
+    if (!data) {
+      throw new Error('메시지 데이터가 없습니다.');
+    }
+
     // 초기화된 클라이언트가 필요한 기능
     if (!bedrockClient) {
       await initializeBedrockClient();
@@ -229,6 +234,10 @@ async function handleChatMessage(data, sendResponse) {
 
     const { messages, sessionId, options = {} } = data;
     
+    if (!messages || !Array.isArray(messages)) {
+      throw new Error('유효하지 않은 메시지 형식입니다.');
+    }
+
     // 세션 관리
     if (sessionId && !activeSessions.has(sessionId)) {
       activeSessions.set(sessionId, {
@@ -239,7 +248,9 @@ async function handleChatMessage(data, sendResponse) {
       });
     }
 
-    // Claude 호출
+    console.log('💬 채팅 메시지 처리 시작:', messages.length, '개 메시지');
+
+    // Claude 호출 (쓰로틀링 고려)
     const response = await bedrockClient.invokeClaude(messages, options);
     
     // 세션에 메시지 추가
@@ -253,6 +264,8 @@ async function handleChatMessage(data, sendResponse) {
       session.lastActivity = Date.now();
     }
 
+    console.log('✅ 채팅 응답 생성 완료');
+
     sendResponse({
       success: true,
       response: response.content[0].text,
@@ -262,9 +275,20 @@ async function handleChatMessage(data, sendResponse) {
 
   } catch (error) {
     console.error('❌ 채팅 메시지 처리 실패:', error);
+    
+    // 쓰로틀링 에러 처리
+    let errorMessage = error.message;
+    if (error.message.includes('throttling') || error.message.includes('rate limit')) {
+      errorMessage = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+    } else if (error.message.includes('quota') || error.message.includes('limit exceeded')) {
+      errorMessage = 'API 사용량 한도에 도달했습니다. 잠시 후 다시 시도해주세요.';
+    } else if (error.message.includes('timeout')) {
+      errorMessage = '응답 시간이 초과되었습니다. 다시 시도해주세요.';
+    }
+    
     sendResponse({
       success: false,
-      error: error.message
+      error: errorMessage
     });
   }
 }
