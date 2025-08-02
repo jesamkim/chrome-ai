@@ -323,15 +323,18 @@ function handleGetSession(sessionId, sendResponse) {
  */
 async function handleGetSupportedModels(sendResponse) {
   try {
+    console.log('📋 지원 모델 조회 요청 받음');
+    
+    // BedrockClient 인스턴스가 없으면 생성 (API Key 없이도 가능)
     if (!bedrockClient) {
-      await initializeBedrockClient();
+      console.log('🔄 Bedrock 클라이언트 인스턴스 생성...');
+      bedrockClient = new BedrockClient();
     }
     
-    if (!bedrockClient) {
-      throw new Error('Bedrock 클라이언트를 초기화할 수 없습니다.');
-    }
-
+    // 모델 목록은 API Key 없이도 가져올 수 있음
     const models = bedrockClient.getSupportedModels();
+    console.log('📋 지원 모델 목록:', models.length, '개');
+    
     sendResponse({
       success: true,
       models: models
@@ -351,19 +354,38 @@ async function handleGetSupportedModels(sendResponse) {
  */
 async function handleGetCurrentModel(sendResponse) {
   try {
+    console.log('🔍 현재 모델 조회 요청 받음');
+    
+    // BedrockClient 인스턴스가 없으면 생성
     if (!bedrockClient) {
-      await initializeBedrockClient();
+      console.log('🔄 Bedrock 클라이언트 인스턴스 생성...');
+      bedrockClient = new BedrockClient();
     }
     
-    if (!bedrockClient) {
-      throw new Error('Bedrock 클라이언트를 초기화할 수 없습니다.');
+    // Storage에서 직접 현재 모델 정보 가져오기
+    const result = await chrome.storage.sync.get(['selectedModel']);
+    const selectedModelKey = result.selectedModel || 'claude-3.7-sonnet';
+    
+    // 모델 정보 구성
+    const supportedModels = bedrockClient.getSupportedModels();
+    const currentModel = supportedModels.find(model => model.key === selectedModelKey);
+    
+    if (!currentModel) {
+      // 기본 모델로 폴백
+      const defaultModel = supportedModels.find(model => model.key === 'claude-3.7-sonnet');
+      console.log('⚠️ 선택된 모델을 찾을 수 없음, 기본 모델 사용:', defaultModel.name);
+      
+      sendResponse({
+        success: true,
+        model: defaultModel
+      });
+    } else {
+      console.log('✅ 현재 모델 조회 완료:', currentModel.name);
+      sendResponse({
+        success: true,
+        model: currentModel
+      });
     }
-
-    const currentModel = bedrockClient.getCurrentModel();
-    sendResponse({
-      success: true,
-      model: currentModel
-    });
 
   } catch (error) {
     console.error('❌ 현재 모델 조회 실패:', error);

@@ -83,7 +83,7 @@ class BedrockClient {
   }
 
   /**
-   * 지원 모델 목록 반환
+   * 지원 모델 목록 반환 (API Key 없이도 사용 가능)
    */
   getSupportedModels() {
     return Object.entries(this.supportedModels).map(([key, model]) => ({
