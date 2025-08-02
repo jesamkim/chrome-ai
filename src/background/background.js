@@ -234,17 +234,29 @@ async function handleInitializeBedrock(sendResponse) {
  */
 async function handleTestConnection(sendResponse) {
   try {
+    console.log('🔍 연결 테스트 시작');
+    
     // 항상 새로운 클라이언트로 테스트 (기존 초기화 상태와 무관)
     const testClient = new BedrockClient();
-    await testClient.initialize();
+    console.log('✅ BedrockClient 인스턴스 생성 완료');
     
+    console.log('🔧 BedrockClient 초기화 시작');
+    await testClient.initialize();
+    console.log('✅ BedrockClient 초기화 완료');
+    
+    console.log('🔗 연결 테스트 실행');
     const result = await testClient.testConnection();
+    console.log('✅ 연결 테스트 결과:', result);
     
     // 테스트 성공 시 전역 클라이언트 업데이트
-    bedrockClient = testClient;
+    if (result.success) {
+      bedrockClient = testClient;
+      console.log('✅ 전역 클라이언트 업데이트 완료');
+    }
     
     sendResponse(result);
   } catch (error) {
+    console.error('❌ 연결 테스트 실패:', error);
     sendResponse({ 
       success: false, 
       error: error.message 

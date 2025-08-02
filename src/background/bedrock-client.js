@@ -214,8 +214,12 @@ class BedrockClient {
     return true;
   }
   checkInitialization() {
-    if (!this.isInitialized || !this.apiKey) {
+    if (!this.isInitialized) {
       throw new Error('Bedrock 클라이언트가 초기화되지 않았습니다. initialize()를 먼저 호출해주세요.');
+    }
+    
+    if (!this.authManager || !this.authManager.isInitialized) {
+      throw new Error('AWS 인증이 설정되지 않았습니다. AWS CLI 설정 또는 API Key를 입력해주세요.');
     }
   }
 

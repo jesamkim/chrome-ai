@@ -19,7 +19,10 @@ class AWSAuthManager {
             console.log('🔐 AWS 인증 초기화 시작');
 
             // 1순위: AWS CLI 인증 확인
+            console.log('🔍 AWS CLI 인증 확인 중...');
             const awsCliAuth = await this.checkAWSCLIAuth();
+            console.log('AWS CLI 인증 결과:', awsCliAuth);
+            
             if (awsCliAuth.available) {
                 this.authType = 'aws-cli';
                 this.credentials = awsCliAuth.credentials;
@@ -33,7 +36,10 @@ class AWSAuthManager {
             }
 
             // 2순위: API Key 인증 확인
+            console.log('🔍 API Key 인증 확인 중...');
             const apiKeyAuth = await this.checkAPIKeyAuth();
+            console.log('API Key 인증 결과:', apiKeyAuth);
+            
             if (apiKeyAuth.available) {
                 this.authType = 'api-key';
                 this.credentials = apiKeyAuth.credentials;
