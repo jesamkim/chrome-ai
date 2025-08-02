@@ -119,42 +119,124 @@ async function handleMessage(request, sender, sendResponse) {
 }
 
 /**
- * 페이지 내용 추출 처리
+ * 페이지 내용 추출 처리 (향상된 버전)
  */
 async function handleExtractPageContent(sendResponse) {
     try {
-        if (!pageAnalyzer) {
-            pageAnalyzer = new PageAnalyzer();
-        }
+        console.log('🔍 향상된 페이지 내용 추출 시작');
         
-        const analysis = await pageAnalyzer.analyzeCurrentPage();
-        const summary = pageAnalyzer.getPageSummary();
+        // 향상된 텍스트 추출기 사용
+        const extractor = new EnhancedTextExtractor();
+        const extractedData = extractor.extractFullPageText();
+        
+        // 텍스트 청킹
+        const chunks = extractor.chunkText(extractedData.fullText, 1000, 100);
+        
+        // 요약 생성 (전체 텍스트 기반)
+        const summary = this.generateComprehensiveSummary(extractedData);
+        
+        console.log('✅ 향상된 페이지 내용 추출 완료:', {
+            totalLength: extractedData.fullText.length,
+            chunkCount: chunks.length,
+            wordCount: extractedData.statistics.wordCount
+        });
         
         sendResponse({
             success: true,
             content: summary,
+            fullData: {
+                metadata: extractedData.metadata,
+                fullText: extractedData.fullText,
+                chunks: chunks,
+                statistics: extractedData.statistics,
+                structuredContent: extractedData.content
+            },
             metadata: {
                 url: window.location.href,
                 title: document.title,
                 domain: window.location.hostname,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                extractionMethod: 'enhanced'
             }
         });
-        
-        console.log('✅ 페이지 내용 추출 완료');
         
     } catch (error) {
-        console.error('❌ 페이지 내용 추출 실패:', error);
-        sendResponse({
-            success: false,
-            error: error.message,
-            fallback: {
-                title: document.title,
-                url: window.location.href,
-                domain: window.location.hostname
-            }
-        });
+        console.error('❌ 향상된 페이지 내용 추출 실패:', error);
+        
+        // 폴백: 기본 방식 사용
+        try {
+            const basicText = document.body ? document.body.innerText.slice(0, 8000) : '';
+            sendResponse({
+                success: true,
+                content: `페이지 제목: ${document.title}\nURL: ${window.location.href}\n\n내용:\n${basicText}`,
+                fullData: {
+                    fullText: basicText,
+                    chunks: [{ id: 0, content: basicText, length: basicText.length }]
+                },
+                metadata: {
+                    url: window.location.href,
+                    title: document.title,
+                    domain: window.location.hostname,
+                    timestamp: new Date().toISOString(),
+                    extractionMethod: 'fallback'
+                }
+            });
+        } catch (fallbackError) {
+            sendResponse({
+                success: false,
+                error: error.message,
+                fallback: {
+                    title: document.title,
+                    url: window.location.href,
+                    domain: window.location.hostname
+                }
+            });
+        }
     }
+}
+
+/**
+ * 포괄적인 요약 생성
+ */
+function generateComprehensiveSummary(extractedData) {
+    const { metadata, content, fullText, statistics } = extractedData;
+    
+    let summary = '';
+    
+    // 기본 정보
+    summary += `페이지 제목: ${metadata.title}\n`;
+    summary += `URL: ${metadata.url}\n`;
+    summary += `도메인: ${metadata.domain}\n`;
+    
+    if (metadata.description) {
+        summary += `설명: ${metadata.description}\n`;
+    }
+    
+    summary += `\n통계:\n`;
+    summary += `- 총 글자 수: ${statistics.characterCount.toLocaleString()}자\n`;
+    summary += `- 단어 수: ${statistics.wordCount.toLocaleString()}개\n`;
+    summary += `- 문장 수: ${statistics.sentenceCount.toLocaleString()}개\n`;
+    summary += `- 단락 수: ${statistics.paragraphCount.toLocaleString()}개\n\n`;
+    
+    // 구조 정보
+    if (content.headings.length > 0) {
+        summary += `페이지 구조 (${content.headings.length}개 제목):\n`;
+        content.headings.forEach(h => {
+            summary += `${'#'.repeat(h.level)} ${h.text}\n`;
+        });
+        summary += '\n';
+    }
+    
+    // 전체 텍스트 내용 (처음 6000자)
+    summary += '전체 페이지 내용:\n';
+    summary += fullText.substring(0, 6000);
+    
+    if (fullText.length > 6000) {
+        summary += `\n\n... (총 ${fullText.length.toLocaleString()}자 중 처음 6,000자 표시)\n`;
+        summary += `전체 내용은 ${Math.ceil(fullText.length / 1000)}개 청크로 분할되어 저장됨`;
+    }
+    
+    return summary;
 }
 
 /**
@@ -301,15 +383,23 @@ class PageAnalyzer {
      */
     extractParagraphs() {
         const paragraphs = [];
-        const paragraphElements = document.querySelectorAll('p, div.content, article p');
+        // 더 포괄적인 선택자 사용
+        const paragraphElements = document.querySelectorAll(`
+            p, div, section, article, main, aside,
+            .content, .post, .article, .text, .description,
+            .summary, .excerpt, .body, .main,
+            [role="main"], [role="article"], [role="complementary"]
+        `);
         
         paragraphElements.forEach((element, index) => {
-            if (index < 50) { // 최대 50개
+            if (index < 200) { // 최대 200개로 증가
                 const text = element.textContent.trim();
                 if (text.length > 20) { // 의미있는 길이의 텍스트만
                     paragraphs.push({
-                        text: text.substring(0, 500), // 최대 500자
-                        length: text.length
+                        text: text.substring(0, 2000), // 최대 2000자로 증가
+                        length: text.length,
+                        tagName: element.tagName.toLowerCase(),
+                        className: element.className || ''
                     });
                 }
             }
@@ -457,9 +547,9 @@ class PageAnalyzer {
     /**
      * 페이지 내용을 텍스트로 요약
      */
-    getPageSummary(maxLength = 2000) {
+    getPageSummary(maxLength = 8000) { // 기본 길이를 8000자로 증가
         if (!this.lastAnalysis) {
-            // 분석이 없으면 기본 텍스트 추출
+            // 분석이 없으면 전체 텍스트 추출
             const bodyText = document.body ? document.body.innerText.slice(0, maxLength) : '';
             return `페이지 제목: ${document.title}\nURL: ${window.location.href}\n\n내용:\n${bodyText}`;
         }
@@ -467,29 +557,105 @@ class PageAnalyzer {
         const { content, metadata } = this.lastAnalysis;
         let summary = '';
         
-        // 제목 추가
+        // 페이지 기본 정보
+        summary += `페이지 제목: ${document.title}\n`;
+        summary += `URL: ${window.location.href}\n\n`;
+        
+        // 메타 설명 추가
+        if (metadata.description) {
+            summary += `설명: ${metadata.description}\n\n`;
+        }
+        
+        // 모든 제목 추가 (제한 없음)
         if (content.headings.length > 0) {
-            summary += '주요 제목:\n';
-            content.headings.slice(0, 5).forEach(h => {
+            summary += '페이지 구조 (제목들):\n';
+            content.headings.forEach(h => {
                 summary += `${'#'.repeat(h.level)} ${h.text}\n`;
             });
             summary += '\n';
         }
         
-        // 설명 추가
-        if (metadata.description) {
-            summary += `설명: ${metadata.description}\n\n`;
-        }
+        // 전체 텍스트 내용 추가
+        summary += '전체 페이지 내용:\n';
         
-        // 주요 내용 추가
+        // 1. 구조화된 단락들
         if (content.paragraphs.length > 0) {
-            summary += '주요 내용:\n';
-            content.paragraphs.slice(0, 3).forEach(p => {
+            content.paragraphs.forEach(p => {
+                // 전체 텍스트 포함 (500자 제한 제거)
                 summary += `${p.text}\n\n`;
             });
         }
         
+        // 2. 목록 내용 추가
+        if (content.lists.length > 0) {
+            summary += '\n목록 내용:\n';
+            content.lists.forEach(list => {
+                summary += `${list.type === 'ul' ? '•' : '1.'} 목록:\n`;
+                list.items.forEach(item => {
+                    summary += `  - ${item}\n`;
+                });
+                summary += '\n';
+            });
+        }
+        
+        // 3. 링크 정보 추가
+        if (content.links.length > 0) {
+            summary += '\n주요 링크:\n';
+            content.links.slice(0, 10).forEach(link => {
+                summary += `- ${link.text}: ${link.url}\n`;
+            });
+            summary += '\n';
+        }
+        
+        // 4. 추가 텍스트 추출 (기존 방식으로 놓친 내용들)
+        const additionalText = this.extractAdditionalText();
+        if (additionalText.length > 0) {
+            summary += '\n추가 텍스트 내용:\n';
+            summary += additionalText;
+        }
+        
         return summary.substring(0, maxLength);
+    }
+
+    /**
+     * 추가 텍스트 추출 (기존 방식으로 놓친 내용들)
+     */
+    extractAdditionalText() {
+        // 더 포괄적인 선택자로 텍스트 추출
+        const textElements = document.querySelectorAll(`
+            div, span, section, article, main, aside, 
+            td, th, li, dt, dd, figcaption, blockquote,
+            [role="main"], [role="article"], [role="complementary"],
+            .content, .post, .article, .text, .description,
+            .summary, .excerpt, .body, .main
+        `);
+        
+        const extractedTexts = new Set(); // 중복 제거
+        let additionalText = '';
+        
+        textElements.forEach(element => {
+            // 스크립트, 스타일, 숨겨진 요소 제외
+            if (element.tagName === 'SCRIPT' || 
+                element.tagName === 'STYLE' || 
+                element.style.display === 'none' ||
+                element.style.visibility === 'hidden') {
+                return;
+            }
+            
+            // 직접적인 텍스트 노드만 추출 (중첩 방지)
+            const directText = Array.from(element.childNodes)
+                .filter(node => node.nodeType === Node.TEXT_NODE)
+                .map(node => node.textContent.trim())
+                .join(' ')
+                .trim();
+            
+            if (directText.length > 10 && !extractedTexts.has(directText)) {
+                extractedTexts.add(directText);
+                additionalText += directText + '\n';
+            }
+        });
+        
+        return additionalText;
     }
 }
 
