@@ -502,14 +502,49 @@ ${pageContent}
 
   // 공통 유틸리티 메서드들
   generateBasicPageInfo(tab) {
-    const domain = new URL(tab.url).hostname;
-    return `페이지 제목: ${tab.title || '제목 없음'}
+    try {
+      const url = new URL(tab.url);
+      const domain = url.hostname;
+      const pageType = this.getPageType(tab.url);
+      
+      let additionalInfo = '';
+      
+      // URL 파라미터 분석
+      if (url.search) {
+        const params = new URLSearchParams(url.search);
+        const paramCount = Array.from(params.keys()).length;
+        additionalInfo += `\nURL 파라미터: ${paramCount}개`;
+      }
+      
+      // 경로 분석
+      if (url.pathname && url.pathname !== '/') {
+        const pathSegments = url.pathname.split('/').filter(segment => segment);
+        additionalInfo += `\n경로 깊이: ${pathSegments.length}단계`;
+      }
+      
+      return `페이지 제목: ${tab.title || '제목 없음'}
 URL: ${tab.url}
 도메인: ${domain}
-페이지 유형: ${this.getPageType(tab.url)}
+페이지 유형: ${pageType}${additionalInfo}
 
-참고: 이 페이지는 Content Script가 로드되지 않아 기본 정보만 제공됩니다.
-더 자세한 분석을 위해서는 페이지를 새로고침하거나 다른 페이지에서 시도해보세요.`;
+분석 제한사항:
+- Content Script가 로드되지 않아 기본 정보만 제공됩니다
+- 페이지의 실제 텍스트 내용을 분석할 수 없습니다
+- 동적 콘텐츠나 JavaScript로 생성된 내용은 포함되지 않습니다
+
+권장사항:
+- 페이지를 새로고침한 후 다시 시도해보세요
+- 다른 웹페이지에서 Extension을 테스트해보세요
+- ${pageType === '브라우저 내부 페이지' ? 'Chrome 내부 페이지는 보안상 분석이 제한됩니다' : '일반 웹페이지에서는 정상적으로 작동해야 합니다'}`;
+      
+    } catch (error) {
+      console.error('❌ 기본 페이지 정보 생성 실패:', error);
+      return `페이지 정보 생성 중 오류가 발생했습니다.
+제목: ${tab.title || '알 수 없음'}
+URL: ${tab.url || '알 수 없음'}
+
+오류: ${error.message}`;
+    }
   }
 
   getPageType(url) {
@@ -529,54 +564,138 @@ URL: ${tab.url}
   }
 
   async extractPageContent(tab) {
+    // 특수 페이지 체크 (Content Script가 작동하지 않는 페이지들)
+    if (this.isRestrictedPage(tab.url)) {
+      console.log('🚫 제한된 페이지, 기본 정보 사용:', tab.url);
+      return this.generateBasicPageInfo(tab);
+    }
+
     try {
-      // 먼저 기존 Content Script에 메시지 시도
-      const contentResponse = await Promise.race([
-        chrome.tabs.sendMessage(tab.id, {
-          type: 'EXTRACT_PAGE_CONTENT'
-        }),
+      // 1단계: Content Script 생존 확인
+      console.log('🔍 Content Script 생존 확인...');
+      const pingResponse = await Promise.race([
+        chrome.tabs.sendMessage(tab.id, { type: 'PING' }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Content Script 응답 시간 초과')), 3000)
+          setTimeout(() => reject(new Error('PING 응답 시간 초과')), 2000)
         )
       ]);
-      
-      if (contentResponse && contentResponse.success) {
-        console.log('✅ Content Script에서 페이지 내용 추출 성공');
-        return contentResponse.content;
-      } else {
-        throw new Error('페이지 내용을 추출할 수 없습니다.');
+
+      if (pingResponse && pingResponse.success) {
+        console.log('✅ Content Script 생존 확인됨');
+        
+        // 2단계: 페이지 내용 추출
+        const contentResponse = await Promise.race([
+          chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_PAGE_CONTENT' }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('내용 추출 시간 초과')), 5000)
+          )
+        ]);
+        
+        if (contentResponse && contentResponse.success) {
+          console.log('✅ Content Script에서 페이지 내용 추출 성공');
+          return contentResponse.content;
+        }
       }
-    } catch (contentError) {
-      console.warn('⚠️ Content Script 응답 없음, 동적 주입 시도:', contentError.message);
       
-      // Content Script 동적 주입 시도
+      throw new Error('Content Script 응답 없음');
+      
+    } catch (contentError) {
+      console.warn('⚠️ Content Script 1차 시도 실패:', contentError.message);
+      
+      // 3단계: Content Script 동적 주입 시도
       try {
+        console.log('🔄 Content Script 동적 주입 시도...');
+        
         await chrome.scripting.executeScript({
           target: { tabId: tab.id },
           files: ['src/content/content.js']
         });
         
-        console.log('🔄 Content Script 동적 주입 완료, 재시도...');
+        console.log('✅ Content Script 동적 주입 완료');
         
-        // 잠시 대기 후 재시도
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 주입 후 초기화 대기
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
-        const retryResponse = await chrome.tabs.sendMessage(tab.id, {
-          type: 'EXTRACT_PAGE_CONTENT'
-        });
+        // 4단계: 동적 주입 후 재시도
+        const retryResponse = await Promise.race([
+          chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_PAGE_CONTENT' }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('재시도 시간 초과')), 5000)
+          )
+        ]);
         
         if (retryResponse && retryResponse.success) {
           console.log('✅ 동적 주입 후 페이지 내용 추출 성공');
           return retryResponse.content;
         }
+        
+        throw new Error('동적 주입 후에도 응답 없음');
+        
       } catch (injectionError) {
         console.warn('⚠️ Content Script 동적 주입 실패:', injectionError.message);
+        
+        // 5단계: 최후의 수단 - 기본 DOM 접근
+        try {
+          console.log('🔄 기본 DOM 접근 시도...');
+          
+          const basicContent = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+              // 페이지에서 직접 텍스트 추출
+              const title = document.title;
+              const bodyText = document.body ? document.body.innerText.slice(0, 5000) : '';
+              const metaDescription = document.querySelector('meta[name="description"]')?.content || '';
+              
+              return {
+                title: title,
+                content: bodyText,
+                description: metaDescription,
+                url: window.location.href
+              };
+            }
+          });
+          
+          if (basicContent && basicContent[0] && basicContent[0].result) {
+            const result = basicContent[0].result;
+            console.log('✅ 기본 DOM 접근으로 내용 추출 성공');
+            
+            return `페이지 제목: ${result.title}
+URL: ${result.url}
+설명: ${result.description}
+
+페이지 내용:
+${result.content}
+
+참고: Content Script를 통한 고급 분석이 불가능하여 기본 내용만 추출되었습니다.`;
+          }
+          
+        } catch (domError) {
+          console.warn('⚠️ 기본 DOM 접근도 실패:', domError.message);
+        }
       }
-      
-      // 모든 시도 실패 시 기본 정보 반환
-      console.warn('⚠️ 모든 Content Script 시도 실패, 기본 정보 사용');
-      return this.generateBasicPageInfo(tab);
     }
+    
+    // 모든 시도 실패 시 기본 정보 반환
+    console.warn('⚠️ 모든 Content Script 시도 실패, 기본 정보 사용');
+    return this.generateBasicPageInfo(tab);
+  }
+
+  /**
+   * 제한된 페이지인지 확인
+   */
+  isRestrictedPage(url) {
+    const restrictedPatterns = [
+      /^chrome:\/\//,
+      /^chrome-extension:\/\//,
+      /^moz-extension:\/\//,
+      /^edge:\/\//,
+      /^about:/,
+      /^file:\/\//,
+      /^data:/,
+      /^javascript:/
+    ];
+    
+    return restrictedPatterns.some(pattern => pattern.test(url));
   }
   showHelp() {
     const helpUrl = chrome.runtime.getURL('src/options/help.html');

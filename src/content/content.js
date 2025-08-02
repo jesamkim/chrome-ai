@@ -1,11 +1,12 @@
 /**
- * Claude AI Assistant Content Script
+ * AWS AI Assistant Content Script
  * 웹페이지 분석 및 컨텍스트 추출
  */
 
 // 전역 변수
 let pageAnalyzer = null;
 let isInitialized = false;
+let messageListener = null;
 
 /**
  * Content Script 초기화
@@ -19,14 +20,133 @@ async function initializeContentScript() {
         // 페이지 분석기 초기화
         pageAnalyzer = new PageAnalyzer();
         
+        // 메시지 리스너 설정
+        setupMessageListener();
+        
         // 자동 분석 설정 확인
-        const settings = await chrome.storage.sync.get(['autoAnalyze']);
-        if (settings.autoAnalyze !== false) {
-            await performAutoAnalysis();
+        try {
+            const settings = await chrome.storage.sync.get(['autoAnalyze']);
+            if (settings.autoAnalyze !== false) {
+                await performAutoAnalysis();
+            }
+        } catch (storageError) {
+            console.warn('⚠️ Storage 접근 실패, 자동 분석 건너뜀:', storageError);
         }
         
         isInitialized = true;
         console.log('✅ Content Script 초기화 완료');
+        
+        // 초기화 완료 신호 전송
+        try {
+            chrome.runtime.sendMessage({
+                type: 'CONTENT_SCRIPT_READY',
+                url: window.location.href,
+                title: document.title
+            });
+        } catch (runtimeError) {
+            console.warn('⚠️ Runtime 메시지 전송 실패:', runtimeError);
+        }
+        
+    } catch (error) {
+        console.error('❌ Content Script 초기화 실패:', error);
+        isInitialized = false;
+    }
+}
+
+/**
+ * 메시지 리스너 설정
+ */
+function setupMessageListener() {
+    // 기존 리스너 제거
+    if (messageListener) {
+        chrome.runtime.onMessage.removeListener(messageListener);
+    }
+    
+    // 새 리스너 설정
+    messageListener = (request, sender, sendResponse) => {
+        console.log('📨 Content Script 메시지 수신:', request.type);
+        
+        // 비동기 응답을 위해 true 반환
+        handleMessage(request, sender, sendResponse);
+        return true;
+    };
+    
+    chrome.runtime.onMessage.addListener(messageListener);
+}
+
+/**
+ * 메시지 처리
+ */
+async function handleMessage(request, sender, sendResponse) {
+    try {
+        switch (request.type) {
+            case 'EXTRACT_PAGE_CONTENT':
+                await handleExtractPageContent(sendResponse);
+                break;
+                
+            case 'PING':
+                sendResponse({ success: true, message: 'Content Script is alive' });
+                break;
+                
+            case 'GET_PAGE_INFO':
+                sendResponse({
+                    success: true,
+                    info: {
+                        url: window.location.href,
+                        title: document.title,
+                        domain: window.location.hostname,
+                        isInitialized: isInitialized
+                    }
+                });
+                break;
+                
+            default:
+                console.warn('⚠️ 알 수 없는 메시지 타입:', request.type);
+                sendResponse({ success: false, error: '알 수 없는 메시지 타입' });
+        }
+    } catch (error) {
+        console.error('❌ 메시지 처리 실패:', error);
+        sendResponse({ success: false, error: error.message });
+    }
+}
+
+/**
+ * 페이지 내용 추출 처리
+ */
+async function handleExtractPageContent(sendResponse) {
+    try {
+        if (!pageAnalyzer) {
+            pageAnalyzer = new PageAnalyzer();
+        }
+        
+        const content = await pageAnalyzer.extractPageContent();
+        
+        sendResponse({
+            success: true,
+            content: content,
+            metadata: {
+                url: window.location.href,
+                title: document.title,
+                domain: window.location.hostname,
+                timestamp: new Date().toISOString()
+            }
+        });
+        
+        console.log('✅ 페이지 내용 추출 완료');
+        
+    } catch (error) {
+        console.error('❌ 페이지 내용 추출 실패:', error);
+        sendResponse({
+            success: false,
+            error: error.message,
+            fallback: {
+                title: document.title,
+                url: window.location.href,
+                domain: window.location.hostname
+            }
+        });
+    }
+}
         
     } catch (error) {
         console.error('❌ Content Script 초기화 실패:', error);

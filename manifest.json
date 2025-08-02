@@ -8,11 +8,13 @@
     "activeTab",
     "storage",
     "scripting",
-    "contextMenus"
+    "contextMenus",
+    "tabs"
   ],
   
   "host_permissions": [
-    "https://bedrock-runtime.us-west-2.amazonaws.com/*"
+    "https://bedrock-runtime.us-west-2.amazonaws.com/*",
+    "<all_urls>"
   ],
   
   "background": {
@@ -22,7 +24,9 @@
   "content_scripts": [{
     "matches": ["<all_urls>"],
     "js": ["src/content/content.js"],
-    "css": ["src/content/content.css"]
+    "css": ["src/content/content.css"],
+    "run_at": "document_idle",
+    "all_frames": false
   }],
   
   "action": {
@@ -39,7 +43,7 @@
   },
 
   "web_accessible_resources": [{
-    "resources": ["src/sidebar/*"],
+    "resources": ["src/sidebar/*", "src/content/*"],
     "matches": ["<all_urls>"]
   }]
 }
