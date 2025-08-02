@@ -24,11 +24,23 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 });
 
 /**
- * Extension 시작 시 초기화
+ * Extension 시작 시 초기화 (API Key가 있는 경우에만)
  */
 chrome.runtime.onStartup.addListener(async () => {
   console.log('🔄 Claude AI Assistant 시작됨');
-  await initializeBedrockClient();
+  
+  // API Key가 있는지 확인 후 초기화
+  try {
+    const result = await chrome.storage.sync.get(['bedrockApiKey']);
+    if (result.bedrockApiKey) {
+      console.log('🔑 API Key 발견, Bedrock 클라이언트 초기화 시도...');
+      await initializeBedrockClient();
+    } else {
+      console.log('⚠️ API Key가 없음, 설정 페이지에서 API Key를 입력해주세요.');
+    }
+  } catch (error) {
+    console.warn('⚠️ 시작 시 초기화 실패:', error.message);
+  }
 });
 
 /**
@@ -183,15 +195,15 @@ async function handleInitializeBedrock(sendResponse) {
  */
 async function handleTestConnection(sendResponse) {
   try {
-    if (!bedrockClient) {
-      await initializeBedrockClient();
-    }
+    // 항상 새로운 클라이언트로 테스트 (기존 초기화 상태와 무관)
+    const testClient = new BedrockClient();
+    await testClient.initialize();
     
-    if (!bedrockClient) {
-      throw new Error('Bedrock 클라이언트를 초기화할 수 없습니다.');
-    }
-
-    const result = await bedrockClient.testConnection();
+    const result = await testClient.testConnection();
+    
+    // 테스트 성공 시 전역 클라이언트 업데이트
+    bedrockClient = testClient;
+    
     sendResponse(result);
   } catch (error) {
     sendResponse({ 
@@ -206,12 +218,13 @@ async function handleTestConnection(sendResponse) {
  */
 async function handleChatMessage(data, sendResponse) {
   try {
+    // 초기화된 클라이언트가 필요한 기능
     if (!bedrockClient) {
       await initializeBedrockClient();
     }
     
     if (!bedrockClient) {
-      throw new Error('Bedrock 클라이언트가 초기화되지 않았습니다.');
+      throw new Error('Bedrock 클라이언트가 초기화되지 않았습니다. API Key를 설정해주세요.');
     }
 
     const { messages, sessionId, options = {} } = data;
@@ -401,21 +414,31 @@ async function handleGetCurrentModel(sendResponse) {
  */
 async function handleSetModel(modelKey, sendResponse) {
   try {
+    // BedrockClient 인스턴스가 없으면 생성
     if (!bedrockClient) {
-      await initializeBedrockClient();
+      bedrockClient = new BedrockClient();
     }
     
-    if (!bedrockClient) {
-      throw new Error('Bedrock 클라이언트를 초기화할 수 없습니다.');
+    // 모델 유효성 검사
+    const supportedModels = bedrockClient.getSupportedModels();
+    const targetModel = supportedModels.find(model => model.key === modelKey);
+    
+    if (!targetModel) {
+      throw new Error(`지원하지 않는 모델입니다: ${modelKey}`);
     }
-
-    await bedrockClient.setModel(modelKey);
-    const newModel = bedrockClient.getCurrentModel();
+    
+    // Storage에 모델 저장
+    await chrome.storage.sync.set({ selectedModel: modelKey });
+    
+    // 초기화된 클라이언트가 있으면 모델 변경
+    if (bedrockClient.isInitialized) {
+      await bedrockClient.setModel(modelKey);
+    }
     
     sendResponse({
       success: true,
-      message: `모델이 ${newModel.name}으로 변경되었습니다.`,
-      model: newModel
+      message: `모델이 ${targetModel.name}으로 변경되었습니다.`,
+      model: targetModel
     });
 
   } catch (error) {
