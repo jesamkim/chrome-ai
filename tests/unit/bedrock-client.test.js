@@ -8,12 +8,20 @@ global.chrome = {
     sync: {
       get: jest.fn(),
       set: jest.fn()
+    },
+    local: {
+      get: jest.fn(),
+      set: jest.fn(),
+      remove: jest.fn()
     }
   }
 };
 
 // Fetch API 모킹
 global.fetch = jest.fn();
+
+// AWSAuthManager 먼저 로드
+global.AWSAuthManager = require('../../src/background/aws-auth-manager.js');
 
 // BedrockClient 클래스 로드
 const BedrockClient = require('../../src/background/bedrock-client.js');
@@ -36,13 +44,11 @@ describe('BedrockClient', () => {
 
     test('지원 모델이 올바르게 정의되어야 함', () => {
       const models = client.getSupportedModels();
-      expect(models).toHaveLength(4);
+      expect(models).toHaveLength(2); // Claude 모델만 2개
       
       const modelKeys = models.map(m => m.key);
       expect(modelKeys).toContain('claude-3.7-sonnet');
       expect(modelKeys).toContain('claude-4-sonnet');
-      expect(modelKeys).toContain('nova-pro');
-      expect(modelKeys).toContain('nova-lite');
     });
   });
 
@@ -111,15 +117,16 @@ describe('BedrockClient', () => {
 
       expect(result).toBe(true);
       expect(client.isInitialized).toBe(true);
-      expect(client.apiKey).toBe('test-api-key');
+      expect(client.authManager.isInitialized).toBe(true);
       expect(client.currentModel).toBe('claude-3.7-sonnet');
     });
 
     test('API Key가 없을 때 에러를 발생시켜야 함', async () => {
       chrome.storage.sync.get.mockResolvedValue({});
+      chrome.storage.local.get.mockResolvedValue({});
 
       await expect(client.initialize()).rejects.toThrow(
-        'Bedrock API Key가 설정되지 않았습니다'
+        'AWS 인증이 설정되지 않았습니다'
       );
     });
 
@@ -203,14 +210,6 @@ describe('BedrockClient', () => {
       
       expect(prompt).toContain('Claude 4 Sonnet');
       expect(prompt).toContain('최신 기능과 향상된 추론 능력');
-    });
-
-    test('Nova 모델일 때 특화 지침이 포함되어야 함', async () => {
-      await client.setModel('nova-pro');
-      const prompt = client.getDefaultSystemPrompt();
-      
-      expect(prompt).toContain('Amazon Nova Pro');
-      expect(prompt).toContain('간결하고 효율적인 응답');
     });
   });
 });

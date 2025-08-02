@@ -8,12 +8,20 @@ global.chrome = {
     sync: {
       get: jest.fn(),
       set: jest.fn()
+    },
+    local: {
+      get: jest.fn(),
+      set: jest.fn(),
+      remove: jest.fn()
     }
   },
   runtime: {
     sendMessage: jest.fn()
   }
 };
+
+// AWSAuthManager 먼저 로드
+global.AWSAuthManager = require('../../src/background/aws-auth-manager.js');
 
 // BedrockClient import
 const BedrockClient = require('../../src/background/bedrock-client.js');
@@ -66,8 +74,7 @@ describe('모델 로딩 테스트', () => {
       const modelKeys = models.map(model => model.key);
       expect(modelKeys).toContain('claude-3.7-sonnet');
       expect(modelKeys).toContain('claude-4-sonnet');
-      expect(modelKeys).toContain('nova-pro');
-      expect(modelKeys).toContain('nova-lite');
+      // Nova 모델은 제거됨
     });
   });
 
@@ -96,7 +103,7 @@ describe('모델 로딩 테스트', () => {
       
       // Then - 성공적으로 모델 목록 반환
       expect(models).toBeDefined();
-      expect(models.length).toBe(4);
+      expect(models.length).toBe(2); // Claude 모델만 2개
       
       // 응답 형식 검증
       const response = {
@@ -110,17 +117,17 @@ describe('모델 로딩 테스트', () => {
 
     test('GET_CURRENT_MODEL 메시지 처리 (Storage에서 직접)', async () => {
       // Given
-      chrome.storage.sync.get.mockResolvedValue({ selectedModel: 'nova-pro' });
+      chrome.storage.sync.get.mockResolvedValue({ selectedModel: 'claude-4-sonnet' });
       const client = new BedrockClient();
       
       // When
       const models = client.getSupportedModels();
-      const selectedModel = models.find(model => model.key === 'nova-pro');
+      const selectedModel = models.find(model => model.key === 'claude-4-sonnet');
       
       // Then
       expect(selectedModel).toBeDefined();
-      expect(selectedModel.key).toBe('nova-pro');
-      expect(selectedModel.name).toBe('Amazon Nova Pro');
+      expect(selectedModel.key).toBe('claude-4-sonnet');
+      expect(selectedModel.name).toBe('Claude 4 Sonnet');
     });
 
     test('GET_CURRENT_MODEL 기본값 처리', async () => {

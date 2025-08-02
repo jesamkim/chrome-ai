@@ -1,14 +1,34 @@
 /**
- * Claude AI Assistant 설정 페이지 JavaScript
+ * AWS AI Assistant 설정 페이지 JavaScript
+ * AWS CLI 인증과 API Key 인증 지원
  */
 
 // DOM 요소들
 const elements = {
+    // 인증 방식 선택
+    authAWSCLI: document.getElementById('authAWSCLI'),
+    authAPIKey: document.getElementById('authAPIKey'),
+    awsCliSection: document.getElementById('awsCliSection'),
+    apiKeySection: document.getElementById('apiKeySection'),
+    
+    // AWS CLI 인증 요소들
+    awsAccessKeyId: document.getElementById('awsAccessKeyId'),
+    awsSecretAccessKey: document.getElementById('awsSecretAccessKey'),
+    awsSessionToken: document.getElementById('awsSessionToken'),
+    awsRegion: document.getElementById('awsRegion'),
+    awsProfile: document.getElementById('awsProfile'),
+    toggleSecretKey: document.getElementById('toggleSecretKey'),
+    
+    // API Key 인증 요소들
     apiKey: document.getElementById('apiKey'),
     toggleApiKey: document.getElementById('toggleApiKey'),
+    
+    // 공통 요소들
     testConnection: document.getElementById('testConnection'),
     saveApiKey: document.getElementById('saveApiKey'),
     connectionStatus: document.getElementById('connectionStatus'),
+    authStatusIndicator: document.getElementById('authStatusIndicator'),
+    authStatusText: document.getElementById('authStatusText'),
     
     modelSelect: document.getElementById('modelSelect'),
     modelDescription: document.getElementById('modelDescription'),
@@ -37,14 +57,219 @@ const elements = {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 설정 페이지 로드됨');
     
+    // 인증 방식 선택 이벤트 리스너
+    setupAuthMethodListeners();
+    
+    // 비밀번호 토글 이벤트 리스너
+    setupPasswordToggleListeners();
+    
     await loadSettings();
     await loadSupportedModels();
     await loadCurrentModel();
     await loadStatistics();
+    
+    // 현재 인증 상태 확인
+    await checkAuthStatus();
+    
     setupEventListeners();
     
     console.log('✅ 설정 페이지 초기화 완료');
 });
+
+/**
+ * 인증 방식 선택 이벤트 리스너 설정
+ */
+function setupAuthMethodListeners() {
+    elements.authAWSCLI?.addEventListener('change', () => {
+        if (elements.authAWSCLI.checked) {
+            elements.awsCliSection.style.display = 'block';
+            elements.apiKeySection.style.display = 'none';
+        }
+    });
+
+    elements.authAPIKey?.addEventListener('change', () => {
+        if (elements.authAPIKey.checked) {
+            elements.awsCliSection.style.display = 'none';
+            elements.apiKeySection.style.display = 'block';
+        }
+    });
+}
+
+/**
+ * 비밀번호 토글 이벤트 리스너 설정
+ */
+function setupPasswordToggleListeners() {
+    // API Key 토글
+    elements.toggleApiKey?.addEventListener('click', () => {
+        const input = elements.apiKey;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        elements.toggleApiKey.textContent = isPassword ? '🙈' : '👁️';
+    });
+
+    // Secret Access Key 토글
+    elements.toggleSecretKey?.addEventListener('click', () => {
+        const input = elements.awsSecretAccessKey;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        elements.toggleSecretKey.textContent = isPassword ? '🙈' : '👁️';
+    });
+}
+
+/**
+ * 현재 인증 상태 확인
+ */
+async function checkAuthStatus() {
+    try {
+        elements.authStatusIndicator.textContent = '⏳';
+        elements.authStatusIndicator.className = 'status-indicator loading';
+        elements.authStatusText.textContent = '인증 상태 확인 중...';
+
+        const response = await chrome.runtime.sendMessage({
+            type: 'GET_AUTH_INFO'
+        });
+
+        if (response && response.success) {
+            const { authInfo } = response;
+            
+            // 인증 방식 라디오 버튼 설정
+            if (authInfo.authType === 'aws-cli') {
+                elements.authAWSCLI.checked = true;
+                elements.awsCliSection.style.display = 'block';
+                elements.apiKeySection.style.display = 'none';
+                
+                // AWS CLI 정보 로드
+                await loadAWSCLICredentials();
+            } else if (authInfo.authType === 'api-key') {
+                elements.authAPIKey.checked = true;
+                elements.awsCliSection.style.display = 'none';
+                elements.apiKeySection.style.display = 'block';
+            }
+
+            // 상태 표시 업데이트
+            elements.authStatusIndicator.textContent = '✅';
+            elements.authStatusIndicator.className = 'status-indicator connected';
+            elements.authStatusText.textContent = `${authInfo.authType === 'aws-cli' ? 'AWS CLI' : 'API Key'} 인증 활성화 (${authInfo.region})`;
+
+        } else {
+            elements.authStatusIndicator.textContent = '❌';
+            elements.authStatusIndicator.className = 'status-indicator error';
+            elements.authStatusText.textContent = response?.error || '인증 정보가 설정되지 않았습니다';
+            
+            // 기본값으로 API Key 선택
+            elements.authAPIKey.checked = true;
+            elements.apiKeySection.style.display = 'block';
+        }
+
+    } catch (error) {
+        console.error('❌ 인증 상태 확인 실패:', error);
+        elements.authStatusIndicator.textContent = '❌';
+        elements.authStatusIndicator.className = 'status-indicator error';
+        elements.authStatusText.textContent = '인증 상태 확인 실패';
+    }
+}
+
+/**
+ * AWS CLI 인증 정보 로드
+ */
+async function loadAWSCLICredentials() {
+    try {
+        const result = await chrome.storage.local.get([
+            'aws_access_key_id',
+            'aws_secret_access_key',
+            'aws_session_token',
+            'aws_region',
+            'aws_profile'
+        ]);
+
+        if (result.aws_access_key_id) {
+            elements.awsAccessKeyId.value = result.aws_access_key_id;
+        }
+        if (result.aws_secret_access_key) {
+            elements.awsSecretAccessKey.value = result.aws_secret_access_key;
+        }
+        if (result.aws_session_token) {
+            elements.awsSessionToken.value = result.aws_session_token;
+        }
+        if (result.aws_region) {
+            elements.awsRegion.value = result.aws_region;
+        }
+        if (result.aws_profile) {
+            elements.awsProfile.value = result.aws_profile;
+        }
+
+    } catch (error) {
+        console.error('❌ AWS CLI 인증 정보 로드 실패:', error);
+    }
+}
+
+/**
+ * AWS CLI 인증 정보 저장
+ */
+async function saveAWSCLICredentials() {
+    try {
+        const credentials = {
+            accessKeyId: elements.awsAccessKeyId.value.trim(),
+            secretAccessKey: elements.awsSecretAccessKey.value.trim(),
+            sessionToken: elements.awsSessionToken.value.trim() || null,
+            region: elements.awsRegion.value,
+            profile: elements.awsProfile.value.trim() || 'default'
+        };
+
+        if (!credentials.accessKeyId || !credentials.secretAccessKey) {
+            throw new Error('Access Key ID와 Secret Access Key는 필수입니다.');
+        }
+
+        const response = await chrome.runtime.sendMessage({
+            type: 'SET_AWS_CLI_CREDENTIALS',
+            data: { credentials }
+        });
+
+        if (response && response.success) {
+            showNotification('✅ AWS CLI 인증 정보가 저장되었습니다.', 'success');
+            await checkAuthStatus();
+        } else {
+            throw new Error(response?.error || 'AWS CLI 인증 정보 저장 실패');
+        }
+
+    } catch (error) {
+        console.error('❌ AWS CLI 인증 정보 저장 실패:', error);
+        showNotification(`❌ ${error.message}`, 'error');
+    }
+}
+
+/**
+ * AWS CLI 인증 정보 제거
+ */
+async function clearAWSCLICredentials() {
+    try {
+        if (!confirm('AWS CLI 인증 정보를 제거하시겠습니까? API Key 인증으로 전환됩니다.')) {
+            return;
+        }
+
+        const response = await chrome.runtime.sendMessage({
+            type: 'CLEAR_AWS_CLI_CREDENTIALS'
+        });
+
+        if (response && response.success) {
+            // 입력 필드 초기화
+            elements.awsAccessKeyId.value = '';
+            elements.awsSecretAccessKey.value = '';
+            elements.awsSessionToken.value = '';
+            elements.awsRegion.value = 'us-west-2';
+            elements.awsProfile.value = 'default';
+
+            showNotification('✅ AWS CLI 인증 정보가 제거되었습니다.', 'success');
+            await checkAuthStatus();
+        } else {
+            throw new Error(response?.error || 'AWS CLI 인증 정보 제거 실패');
+        }
+
+    } catch (error) {
+        console.error('❌ AWS CLI 인증 정보 제거 실패:', error);
+        showNotification(`❌ ${error.message}`, 'error');
+    }
+}
 
 /**
  * 이벤트 리스너 설정

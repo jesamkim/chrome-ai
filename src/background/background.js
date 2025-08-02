@@ -1,9 +1,10 @@
 /**
  * Chrome Extension Background Service Worker
- * Claude 3.7 Sonnet AI Assistant with Vector Store
+ * Claude 3.7 Sonnet AI Assistant with Vector Store and AWS Auth Manager
  */
 
-// Bedrock 클라이언트 및 Vector Store import
+// AWS 인증 관리자, Bedrock 클라이언트 및 Vector Store import
+importScripts('aws-auth-manager.js');
 importScripts('bedrock-client.js');
 importScripts('vector-store.js');
 
@@ -174,6 +175,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     case 'VECTOR_STORE_INFO':
       handleVectorStoreInfoRequest(sendResponse);
+      break;
+    
+    case 'GET_AUTH_INFO':
+      handleGetAuthInfoRequest(sendResponse);
+      break;
+    
+    case 'SET_AWS_CLI_CREDENTIALS':
+      handleSetAWSCLICredentialsRequest(request.data, sendResponse);
+      break;
+    
+    case 'CLEAR_AWS_CLI_CREDENTIALS':
+      handleClearAWSCLICredentialsRequest(sendResponse);
+      break;
+    
+    case 'SWITCH_AUTH_METHOD':
+      handleSwitchAuthMethodRequest(request.data, sendResponse);
       break;
     
     case 'GET_SESSION':
@@ -724,6 +741,149 @@ async function handleVectorStoreInfoRequest(sendResponse) {
     
   } catch (error) {
     console.error('❌ Vector Store 정보 조회 실패:', error);
+    sendResponse({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
+/**
+ * AWS 인증 정보 요청 처리
+ */
+async function handleGetAuthInfoRequest(sendResponse) {
+  try {
+    if (!bedrockClient || !bedrockClient.authManager) {
+      sendResponse({
+        success: false,
+        error: 'AWS 인증 관리자가 초기화되지 않았습니다.'
+      });
+      return;
+    }
+    
+    const authInfo = bedrockClient.authManager.getAuthInfo();
+    
+    sendResponse({
+      success: true,
+      authInfo: authInfo,
+      message: 'AWS 인증 정보를 조회했습니다.'
+    });
+    
+  } catch (error) {
+    console.error('❌ AWS 인증 정보 조회 실패:', error);
+    sendResponse({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
+/**
+ * AWS CLI 인증 정보 설정 요청 처리
+ */
+async function handleSetAWSCLICredentialsRequest(data, sendResponse) {
+  try {
+    if (!bedrockClient || !bedrockClient.authManager) {
+      throw new Error('AWS 인증 관리자가 초기화되지 않았습니다.');
+    }
+    
+    if (!data || !data.credentials) {
+      throw new Error('AWS CLI 인증 정보가 없습니다.');
+    }
+    
+    const success = await bedrockClient.authManager.setAWSCLICredentials(data.credentials);
+    
+    if (success) {
+      // Bedrock 클라이언트 재초기화
+      await bedrockClient.initialize();
+      
+      // Vector Store도 재초기화
+      if (vectorStore) {
+        vectorStore = new VectorStore(bedrockClient);
+      }
+    }
+    
+    sendResponse({
+      success: success,
+      message: 'AWS CLI 인증 정보가 설정되었습니다.'
+    });
+    
+  } catch (error) {
+    console.error('❌ AWS CLI 인증 정보 설정 실패:', error);
+    sendResponse({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
+/**
+ * AWS CLI 인증 정보 제거 요청 처리
+ */
+async function handleClearAWSCLICredentialsRequest(sendResponse) {
+  try {
+    if (!bedrockClient || !bedrockClient.authManager) {
+      throw new Error('AWS 인증 관리자가 초기화되지 않았습니다.');
+    }
+    
+    const success = await bedrockClient.authManager.clearAWSCLICredentials();
+    
+    if (success) {
+      // Bedrock 클라이언트 재초기화
+      await bedrockClient.initialize();
+      
+      // Vector Store도 재초기화
+      if (vectorStore) {
+        vectorStore = new VectorStore(bedrockClient);
+      }
+    }
+    
+    sendResponse({
+      success: success,
+      message: 'AWS CLI 인증 정보가 제거되었습니다. API Key 인증으로 전환됩니다.'
+    });
+    
+  } catch (error) {
+    console.error('❌ AWS CLI 인증 정보 제거 실패:', error);
+    sendResponse({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
+/**
+ * 인증 방식 전환 요청 처리
+ */
+async function handleSwitchAuthMethodRequest(data, sendResponse) {
+  try {
+    if (!bedrockClient || !bedrockClient.authManager) {
+      throw new Error('AWS 인증 관리자가 초기화되지 않았습니다.');
+    }
+    
+    if (!data || !data.method) {
+      throw new Error('전환할 인증 방식이 지정되지 않았습니다.');
+    }
+    
+    const success = await bedrockClient.authManager.switchAuthMethod(data.method);
+    
+    if (success) {
+      // Bedrock 클라이언트 재초기화
+      await bedrockClient.initialize();
+      
+      // Vector Store도 재초기화
+      if (vectorStore) {
+        vectorStore = new VectorStore(bedrockClient);
+      }
+    }
+    
+    sendResponse({
+      success: success,
+      message: `${data.method} 인증 방식으로 전환되었습니다.`
+    });
+    
+  } catch (error) {
+    console.error('❌ 인증 방식 전환 실패:', error);
     sendResponse({
       success: false,
       error: error.message

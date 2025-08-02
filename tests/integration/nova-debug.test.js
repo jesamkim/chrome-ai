@@ -8,11 +8,20 @@ global.chrome = {
     sync: {
       get: jest.fn(),
       set: jest.fn().mockResolvedValue()
+    },
+    local: {
+      get: jest.fn(),
+      set: jest.fn(),
+      remove: jest.fn()
     }
   }
 };
 
 global.fetch = require('node-fetch');
+
+// AWSAuthManager 먼저 로드
+global.AWSAuthManager = require('../../src/background/aws-auth-manager.js');
+
 const BedrockClient = require('../../src/background/bedrock-client.js');
 
 describe('Nova 응답 구조 디버깅', () => {

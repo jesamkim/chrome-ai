@@ -1,13 +1,20 @@
 /**
  * AWS Bedrock Multi-Model API 클라이언트
- * API Key 기반 인증 사용
- * 지원 모델: Claude 3.7 Sonnet (기본), Claude 4 Sonnet, Nova Pro, Nova Lite
+ * AWS CLI 인증 우선, API Key 폴백 지원
+ * 지원 모델: Claude 3.7 Sonnet (기본), Claude 4 Sonnet
  */
+
+// AWSAuthManager import (Chrome Extension 환경에서는 전역으로 로드됨)
+if (typeof AWSAuthManager === 'undefined' && typeof require !== 'undefined') {
+  // Node.js 테스트 환경에서만 require 사용
+  const AWSAuthManager = require('./aws-auth-manager.js');
+}
+
 class BedrockClient {
   constructor() {
     this.region = 'us-west-2'; // 고정 리전
     this.baseUrl = `https://bedrock-runtime.${this.region}.amazonaws.com`;
-    this.apiKey = null;
+    this.authManager = new AWSAuthManager();
     this.isInitialized = false;
     
     // 지원 모델 정의
@@ -33,19 +40,28 @@ class BedrockClient {
   }
 
   /**
-   * 클라이언트 초기화 - Chrome Storage에서 API Key 및 모델 설정 로드
+   * 클라이언트 초기화 - AWS 인증 우선순위에 따라 초기화
    */
   async initialize() {
     try {
-      const result = await chrome.storage.sync.get(['bedrockApiKey', 'selectedModel']);
+      console.log('🔧 Bedrock 클라이언트 초기화 시작');
       
-      if (!result.bedrockApiKey) {
-        throw new Error('Bedrock API Key가 설정되지 않았습니다. 설정 페이지에서 API Key를 입력해주세요.');
+      // AWS 인증 관리자 초기화
+      const authSuccess = await this.authManager.initialize();
+      
+      if (!authSuccess) {
+        throw new Error('AWS 인증이 설정되지 않았습니다. AWS CLI 설정 또는 API Key를 입력해주세요.');
       }
-      
-      this.apiKey = result.bedrockApiKey;
-      
-      // 선택된 모델 설정 (기본값: claude-3.7-sonnet)
+
+      // 인증 정보 확인
+      const authInfo = this.authManager.getAuthInfo();
+      console.log('✅ AWS 인증 완료:', {
+        type: authInfo.authType,
+        region: authInfo.region
+      });
+
+      // 선택된 모델 로드
+      const result = await chrome.storage.sync.get(['selectedModel']);
       this.currentModel = result.selectedModel || 'claude-3.7-sonnet';
       
       // 모델 유효성 검사
@@ -54,16 +70,20 @@ class BedrockClient {
         this.currentModel = 'claude-3.7-sonnet';
         await chrome.storage.sync.set({ selectedModel: this.currentModel });
       }
-      
+
       this.isInitialized = true;
       
       console.log('✅ Bedrock 클라이언트 초기화 완료:', {
+        authType: authInfo.authType,
         model: this.supportedModels[this.currentModel].name,
         modelId: this.supportedModels[this.currentModel].id
       });
+      
       return true;
+      
     } catch (error) {
       console.error('❌ Bedrock 클라이언트 초기화 실패:', error);
+      this.isInitialized = false;
       throw error;
     }
   }
@@ -83,12 +103,13 @@ class BedrockClient {
         inputText: text.substring(0, 8000) // Titan Embeddings 최대 입력 길이
       };
 
+      // AWS 인증 헤더 가져오기
+      const authHeaders = await this.authManager.getAuthHeaders();
+
       const response = await fetch(`${this.baseUrl}/model/amazon.titan-embed-text-v2:0/invoke`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Accept': 'application/json'
+          ...authHeaders
         },
         body: JSON.stringify(requestBody)
       });
@@ -247,11 +268,13 @@ class BedrockClient {
         endpoint: endpoint.split('/').pop()
       });
 
+      // AWS 인증 헤더 가져오기
+      const authHeaders = await this.authManager.getAuthHeaders();
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
+          ...authHeaders,
           'X-Amzn-Bedrock-Accept': 'application/json',
           'X-Amzn-Bedrock-Content-Type': 'application/json'
         },
