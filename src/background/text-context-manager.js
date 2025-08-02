@@ -29,20 +29,23 @@ class TextContextManager {
         try {
             const { metadata, content, fullText, statistics } = pageData;
             
+            // fullText 유효성 검사
+            const safeFullText = fullText || '';
+            
             // 1. 구조화된 컨텍스트 생성
             const structuredContext = this.createStructuredContext(metadata, content);
             
             // 2. 토큰 제한에 맞춰 압축
-            const compressedContext = this.fitToTokenLimit(structuredContext, fullText);
+            const compressedContext = this.fitToTokenLimit(structuredContext, safeFullText);
             
             // 3. 최종 컨텍스트 포맷팅
             const finalContext = this.formatContext(compressedContext, metadata);
             
             console.log('✅ 텍스트 압축 완료:', {
-                originalLength: fullText.length,
+                originalLength: safeFullText.length,
                 compressedLength: finalContext.length,
-                compressionRatio: fullText.length > 0 ? 
-                    `${Math.round((1 - finalContext.length / fullText.length) * 100)}%` : 
+                compressionRatio: safeFullText.length > 0 ? 
+                    `${Math.round((1 - finalContext.length / safeFullText.length) * 100)}%` : 
                     '0%',
                 estimatedTokens: Math.ceil(finalContext.length / this.approximateTokenRatio)
             });
@@ -52,11 +55,11 @@ class TextContextManager {
                 metadata: {
                     url: metadata.url,
                     title: metadata.title,
-                    originalLength: fullText.length,
+                    originalLength: safeFullText.length,
                     compressedLength: finalContext.length,
                     estimatedTokens: Math.ceil(finalContext.length / this.approximateTokenRatio),
-                    compressionRatio: fullText.length > 0 ? 
-                        Math.round((1 - finalContext.length / fullText.length) * 100) : 0
+                    compressionRatio: safeFullText.length > 0 ? 
+                        Math.round((1 - finalContext.length / safeFullText.length) * 100) : 0
                 }
             };
             

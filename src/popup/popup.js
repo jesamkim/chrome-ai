@@ -9,6 +9,7 @@ class PopupManager {
     this.isConnected = false;
     this.currentModel = 'claude-3.7-sonnet';
     this.chatHistory = [];
+    this.isSending = false; // 메시지 전송 중 플래그
     
     this.init();
   }
@@ -459,7 +460,15 @@ ${pageContent}
     const message = this.chatInput?.value?.trim();
     if (!message || !this.isConnected) return;
 
+    // 중복 호출 방지
+    if (this.isSending) {
+      console.log('⚠️ 메시지 전송 중, 중복 호출 방지');
+      return;
+    }
+
     try {
+      this.isSending = true; // 전송 중 플래그 설정
+      
       // 사용자 메시지 표시
       this.addMessageToChat('user', message);
       this.chatInput.value = '';
@@ -508,6 +517,8 @@ ${pageContent}
       console.error('❌ 메시지 전송 실패:', error);
       this.hideTypingIndicator();
       this.addMessageToChat('assistant', '죄송합니다. 메시지 전송 중 오류가 발생했습니다.');
+    } finally {
+      this.isSending = false; // 전송 완료 후 플래그 해제
     }
   }
 
