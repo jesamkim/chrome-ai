@@ -230,10 +230,10 @@ class PopupManager {
           // 페이지 내용 추출
           const pageContent = await this.extractPageContent(tab);
           
-          // Vector Store에 페이지 인덱싱 (백그라운드에서 실행)
+          // TextContextManager로 페이지 컨텍스트 처리 (백그라운드에서 실행)
           this.indexCurrentPage(tab, pageContent);
           
-          // 기본 페이지 컨텍스트 설정 (Vector Store 검색 실패 시 폴백용)
+          // 기본 페이지 컨텍스트 설정 (TextContextManager 처리 실패 시 폴백용)
           this.pageContext = `현재 사용자가 보고 있는 페이지 정보:
 ${pageContent}
 
@@ -253,11 +253,11 @@ ${pageContent}
   }
 
   /**
-   * 현재 페이지를 Vector Store에 인덱싱
+   * 현재 페이지를 TextContextManager로 처리
    */
   async indexCurrentPage(tab, pageContent) {
     try {
-      console.log('📊 페이지 Vector Store 인덱싱 시작...');
+      console.log('📊 페이지 TextContextManager 처리 시작...');
       
       // 향상된 텍스트 추출 결과가 있는지 확인
       const fullPageData = await this.getFullPageData(tab);
@@ -478,7 +478,7 @@ ${pageContent}
             { role: 'user', content: message }
           ],
           systemPrompt: this.pageContext || '현재 페이지에 대한 질문에 답변해주세요.',
-          useVectorSearch: true, // Vector Store 검색 활성화
+          useVectorSearch: true, // 페이지 컨텍스트 활성화
           sessionId: 'popup-session',
           options: {
             maxTokens: 2000
@@ -492,12 +492,13 @@ ${pageContent}
       if (response && response.success) {
         this.addMessageToChat('assistant', response.response);
         
-        // Vector Store 사용 정보 표시 (디버그용)
+        // TextContextManager 사용 정보 표시 (디버그용)
         if (response.vectorSearch && response.vectorSearch.used) {
-          console.log('🔍 Vector Store 검색 사용됨:', {
-            searchResults: response.vectorSearch.searchResults,
-            topSimilarity: response.vectorSearch.topSimilarity,
-            queryTokens: response.vectorSearch.queryTokens
+          console.log('🔍 TextContextManager 컨텍스트 사용됨:', {
+            contextLength: response.vectorSearch.contextLength,
+            originalLength: response.vectorSearch.originalLength,
+            compressionRatio: response.vectorSearch.compressionRatio,
+            estimatedTokens: response.vectorSearch.estimatedTokens
           });
         }
       } else {

@@ -304,7 +304,12 @@ class AWSAuthManager {
     }
 }
 
-// 전역으로 사용할 수 있도록 export (Chrome Extension 환경에서만)
+// Service Worker 환경에서 사용할 수 있도록 globalThis에 등록
+if (typeof globalThis !== 'undefined') {
+    globalThis.AWSAuthManager = AWSAuthManager;
+}
+
+// Chrome Extension 환경에서만 window 사용
 if (typeof window !== 'undefined') {
     window.AWSAuthManager = AWSAuthManager;
 }
