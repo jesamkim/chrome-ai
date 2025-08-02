@@ -483,20 +483,23 @@ footer {
 .auth-status {
   margin-top: 20px;
   padding: 16px;
-  background-color: #f5f5f5;
+  background: rgba(255, 255, 255, 0.08);  /* 다크 테마에 맞는 배경 */
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
 }
 
 .auth-status h3 {
   margin: 0 0 12px 0;
   font-size: 14px;
-  color: #666;
+  color: #ffffff;  /* 밝은 흰색 텍스트 */
+  font-weight: 600;
 }
 
 #authStatusDisplay {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: #ffffff;  /* 상태 텍스트도 밝게 */
 }
 
 .status-indicator {
@@ -504,15 +507,15 @@ footer {
 }
 
 .status-indicator.connected {
-  color: #4caf50;
+  color: #4caf50;  /* 연결됨: 초록색 */
 }
 
 .status-indicator.error {
-  color: #f44336;
+  color: #f44336;  /* 오류: 빨간색 */
 }
 
 .status-indicator.loading {
-  color: #ff9800;
+  color: #ff9800;  /* 로딩: 주황색 */
 }
 
 /* 코드 스타일 */

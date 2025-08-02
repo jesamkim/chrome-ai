@@ -293,8 +293,10 @@ function setupEventListeners() {
     elements.resetStats.addEventListener('click', resetStatistics);
     
     // 실시간 유효성 검사
-    elements.apiKey.addEventListener('input', validateApiKey);
-    elements.maxTokens.addEventListener('input', validateMaxTokens);
+    elements.apiKey?.addEventListener('input', validateApiKey);
+    elements.awsAccessKeyId?.addEventListener('input', validateAWSCLIAuth);
+    elements.awsSecretAccessKey?.addEventListener('input', validateAWSCLIAuth);
+    elements.maxTokens?.addEventListener('input', validateMaxTokens);
 }
 
 /**
@@ -553,18 +555,41 @@ function maskApiKey(apiKey) {
 }
 
 /**
- * API Key 유효성 검사
+ * 인증 정보 유효성 검사 (통합)
  */
 function validateApiKey() {
-    const apiKey = elements.apiKey.value.trim();
-    const isValid = apiKey.length > 0 && !apiKey.includes('*');
-    
-    elements.saveApiKey.disabled = !isValid;
-    elements.testConnection.disabled = !isValid;
-    
-    if (apiKey && !apiKey.includes('*')) {
-        elements.apiKey.dataset.originalValue = apiKey;
+    let isValid = false;
+
+    // 선택된 인증 방식 확인
+    if (elements.authAWSCLI?.checked) {
+        // AWS CLI 인증 방식
+        const accessKeyId = elements.awsAccessKeyId?.value.trim();
+        const secretAccessKey = elements.awsSecretAccessKey?.value.trim();
+        isValid = accessKeyId && secretAccessKey && accessKeyId.length > 0 && secretAccessKey.length > 0;
+    } else if (elements.authAPIKey?.checked) {
+        // API Key 인증 방식
+        const apiKey = elements.apiKey?.value.trim();
+        isValid = apiKey && apiKey.length > 0 && !apiKey.includes('*');
+        
+        if (apiKey && !apiKey.includes('*')) {
+            elements.apiKey.dataset.originalValue = apiKey;
+        }
     }
+    
+    // 버튼 상태 업데이트
+    if (elements.saveApiKey) {
+        elements.saveApiKey.disabled = !isValid;
+    }
+    if (elements.testConnection) {
+        elements.testConnection.disabled = !isValid;
+    }
+}
+
+/**
+ * AWS CLI 인증 정보 유효성 검사
+ */
+function validateAWSCLIAuth() {
+    validateApiKey(); // 통합 유효성 검사 호출
 }
 
 /**
@@ -587,28 +612,76 @@ function updateTemperatureDisplay() {
  * 연결 테스트
  */
 async function testConnection() {
-    const apiKey = elements.apiKey.dataset.originalValue || elements.apiKey.value.trim();
-    
-    if (!apiKey || apiKey.includes('*')) {
-        showStatus('유효한 API Key를 입력해주세요.', 'error');
-        return;
+    // 선택된 인증 방식 확인
+    let authMethod = 'api-key'; // 기본값
+    if (elements.authAWSCLI?.checked) {
+        authMethod = 'aws-cli';
+    } else if (elements.authAPIKey?.checked) {
+        authMethod = 'api-key';
     }
-    
+
+    console.log('🔍 연결 테스트 시작:', authMethod);
+
     // 버튼 상태 변경
     elements.testConnection.disabled = true;
     elements.testConnection.textContent = '테스트 중...';
     
     try {
-        // 임시로 API Key 저장
-        await chrome.storage.sync.set({ bedrockApiKey: apiKey });
-        
+        if (authMethod === 'aws-cli') {
+            // AWS CLI 인증 정보 확인
+            const accessKeyId = elements.awsAccessKeyId?.value.trim();
+            const secretAccessKey = elements.awsSecretAccessKey?.value.trim();
+            
+            if (!accessKeyId || !secretAccessKey) {
+                showStatus('AWS Access Key ID와 Secret Access Key를 입력해주세요.', 'error');
+                return;
+            }
+
+            // AWS CLI 인증 정보 임시 저장
+            const sessionToken = elements.awsSessionToken?.value.trim();
+            const region = elements.awsRegion?.value.trim() || 'us-west-2';
+            const profile = elements.awsProfile?.value.trim() || 'default';
+
+            await chrome.storage.local.set({
+                aws_access_key_id: accessKeyId,
+                aws_secret_access_key: secretAccessKey,
+                aws_session_token: sessionToken || null,
+                aws_region: region,
+                aws_profile: profile
+            });
+
+            // API Key 설정 제거 (AWS CLI 우선)
+            await chrome.storage.sync.remove(['bedrockApiKey']);
+
+        } else {
+            // API Key 인증 확인
+            const apiKey = elements.apiKey.dataset.originalValue || elements.apiKey.value.trim();
+            
+            if (!apiKey || apiKey.includes('*')) {
+                showStatus('유효한 API Key를 입력해주세요.', 'error');
+                return;
+            }
+
+            // API Key 임시 저장
+            await chrome.storage.sync.set({ bedrockApiKey: apiKey });
+
+            // AWS CLI 설정 제거 (API Key 우선)
+            await chrome.storage.local.remove([
+                'aws_access_key_id',
+                'aws_secret_access_key',
+                'aws_session_token',
+                'aws_region',
+                'aws_profile'
+            ]);
+        }
+
         // Background Script에 연결 테스트 요청
         const response = await chrome.runtime.sendMessage({
             type: 'TEST_CONNECTION'
         });
         
         if (response.success) {
-            showStatus('✅ 연결 테스트 성공! API Key가 정상적으로 작동합니다.', 'success');
+            showStatus(`✅ 연결 테스트 성공! ${authMethod === 'aws-cli' ? 'AWS CLI 인증' : 'API Key 인증'}이 정상적으로 작동합니다.`, 'success');
             console.log('연결 테스트 응답:', response.response);
         } else {
             showStatus(`❌ 연결 테스트 실패: ${response.error}`, 'error');
