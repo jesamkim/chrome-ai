@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Claude 3.7 AI Assistant",
+  "version": "1.0.0",
+  "description": "AWS Bedrock Claude 3.7 Sonnet 기반 웹페이지 분석 AI 어시스턴트",
+  
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "https://bedrock-runtime.us-west-2.amazonaws.com/*"
+  ],
+  
+  "background": {
+    "service_worker": "src/background/background.js"
+  },
+  
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["src/content/content.js"],
+    "css": ["src/content/content.css"]
+  }],
+  
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "Claude AI Assistant"
+  },
+  
+  "options_page": "src/options/options.html",
+  
+  "icons": {
+    "16": "src/assets/icons/icon16.png",
+    "48": "src/assets/icons/icon48.png",
+    "128": "src/assets/icons/icon128.png"
+  },
+
+  "web_accessible_resources": [{
+    "resources": ["src/sidebar/*"],
+    "matches": ["<all_urls>"]
+  }]
+}

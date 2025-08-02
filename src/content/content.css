@@ -1,0 +1,278 @@
+/* Claude AI Assistant Content Script 스타일 */
+
+/* 기본 스타일 초기화 */
+.claude-ai-assistant * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* 사이드바 컨테이너 (향후 구현) */
+.claude-ai-sidebar {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 400px;
+    height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #e0e6ed;
+    z-index: 2147483647; /* 최대 z-index */
+    transition: right 0.3s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.3);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.claude-ai-sidebar.open {
+    right: 0;
+}
+
+/* 하이라이트 스타일 */
+.claude-ai-highlight {
+    background: rgba(102, 126, 234, 0.2) !important;
+    border: 2px solid rgba(102, 126, 234, 0.5) !important;
+    border-radius: 4px !important;
+    transition: all 0.3s ease !important;
+}
+
+.claude-ai-highlight:hover {
+    background: rgba(102, 126, 234, 0.3) !important;
+    border-color: rgba(102, 126, 234, 0.7) !important;
+}
+
+/* 분석 중 표시 */
+.claude-ai-analyzing {
+    position: relative;
+}
+
+.claude-ai-analyzing::after {
+    content: '🤖 분석 중...';
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(102, 126, 234, 0.9);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 2147483646;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* 툴팁 스타일 */
+.claude-ai-tooltip {
+    position: absolute;
+    background: rgba(26, 26, 46, 0.95);
+    color: #e0e6ed;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    z-index: 2147483645;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+.claude-ai-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(26, 26, 46, 0.95);
+}
+
+/* 플로팅 버튼 (향후 구현) */
+.claude-ai-float-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 2147483644;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+}
+
+.claude-ai-float-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.claude-ai-float-button:active {
+    transform: translateY(0);
+}
+
+/* 선택 텍스트 하이라이트 */
+::selection {
+    background: rgba(102, 126, 234, 0.3);
+}
+
+::-moz-selection {
+    background: rgba(102, 126, 234, 0.3);
+}
+
+/* 컨텍스트 메뉴 스타일 개선 */
+.claude-ai-context-menu {
+    position: absolute;
+    background: rgba(26, 26, 46, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 8px 0;
+    min-width: 180px;
+    z-index: 2147483643;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.claude-ai-context-menu-item {
+    padding: 10px 16px;
+    color: #e0e6ed;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.claude-ai-context-menu-item:hover {
+    background: rgba(102, 126, 234, 0.2);
+}
+
+.claude-ai-context-menu-item:active {
+    background: rgba(102, 126, 234, 0.3);
+}
+
+/* 로딩 스피너 */
+.claude-ai-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #667eea;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 알림 메시지 */
+.claude-ai-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(26, 26, 46, 0.95);
+    color: #e0e6ed;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 2147483642;
+    backdrop-filter: blur(10px);
+    max-width: 300px;
+    font-size: 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease-out;
+}
+
+.claude-ai-notification.success {
+    border-color: rgba(72, 187, 120, 0.5);
+    background: rgba(72, 187, 120, 0.1);
+}
+
+.claude-ai-notification.error {
+    border-color: rgba(245, 101, 101, 0.5);
+    background: rgba(245, 101, 101, 0.1);
+}
+
+.claude-ai-notification.info {
+    border-color: rgba(66, 153, 225, 0.5);
+    background: rgba(66, 153, 225, 0.1);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .claude-ai-sidebar {
+        width: 100vw;
+        right: -100vw;
+    }
+    
+    .claude-ai-float-button {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+        bottom: 15px;
+        right: 15px;
+    }
+    
+    .claude-ai-notification {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}
+
+/* 다크 모드 대응 */
+@media (prefers-color-scheme: dark) {
+    .claude-ai-highlight {
+        background: rgba(102, 126, 234, 0.15) !important;
+    }
+    
+    .claude-ai-tooltip {
+        background: rgba(40, 40, 60, 0.95);
+    }
+}
+
+/* 접근성 개선 */
+@media (prefers-reduced-motion: reduce) {
+    .claude-ai-sidebar,
+    .claude-ai-float-button,
+    .claude-ai-highlight,
+    .claude-ai-notification {
+        transition: none;
+        animation: none;
+    }
+}
+
+/* 고대비 모드 대응 */
+@media (prefers-contrast: high) {
+    .claude-ai-highlight {
+        border-width: 3px !important;
+        background: rgba(102, 126, 234, 0.4) !important;
+    }
+    
+    .claude-ai-tooltip,
+    .claude-ai-notification {
+        border-width: 2px;
+        background: rgba(0, 0, 0, 0.9);
+    }
+}

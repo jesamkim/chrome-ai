@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude AI Extension 데모 페이지</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .feature {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+        }
+        .feature h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .instructions {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #2196f3;
+        }
+        .instructions h3 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        .extension-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .demo-content {
+            margin: 20px 0;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+        .tech-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .tech-spec {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .tech-spec strong {
+            display: block;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="extension-icon">🤖</div>
+        <h1>Claude AI Chrome Extension</h1>
+        <p>AWS Bedrock Claude 3.7 Sonnet 기반 웹페이지 분석 AI 어시스턴트</p>
+    </div>
+
+    <div class="content">
+        <h2>🚀 Extension 기능 소개</h2>
+        
+        <div class="feature">
+            <h3>📄 지능형 웹페이지 분석</h3>
+            <p>현재 보고 있는 웹페이지의 내용을 Claude AI가 자동으로 분석하여 핵심 정보를 추출합니다.</p>
+        </div>
+
+        <div class="feature">
+            <h3>💬 실시간 AI 채팅</h3>
+            <p>페이지 내용을 바탕으로 Claude와 자연스러운 대화를 나눌 수 있습니다. 궁금한 점을 언제든 물어보세요!</p>
+        </div>
+
+        <div class="feature">
+            <h3>⚡ 빠른 작업 도구</h3>
+            <p>요약, 핵심 포인트 추출, 번역 등 자주 사용하는 기능을 원클릭으로 실행할 수 있습니다.</p>
+        </div>
+
+        <div class="feature">
+            <h3>🎯 다중 모델 지원</h3>
+            <p>Claude 3.7 Sonnet, Claude 4 Sonnet, Amazon Nova Pro, Nova Lite 등 다양한 AI 모델을 선택할 수 있습니다.</p>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="instructions">
+            <h3>📋 Extension 사용 방법</h3>
+            
+            <div class="step">
+                <strong>1단계:</strong> Chrome 브라우저에서 chrome://extensions/ 페이지로 이동
+            </div>
+            
+            <div class="step">
+                <strong>2단계:</strong> 우측 상단의 "개발자 모드" 활성화
+            </div>
+            
+            <div class="step">
+                <strong>3단계:</strong> "압축해제된 확장 프로그램을 로드합니다" 클릭
+            </div>
+            
+            <div class="step">
+                <strong>4단계:</strong> 이 프로젝트 폴더(/Workshop/chrome-ai) 선택
+            </div>
+            
+            <div class="step">
+                <strong>5단계:</strong> Extension 아이콘 클릭 후 설정 페이지에서 AWS Bedrock API Key 입력
+            </div>
+            
+            <div class="step">
+                <strong>6단계:</strong> 이 페이지에서 Extension 기능 테스트!
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <h2>🔧 기술 사양</h2>
+        
+        <div class="tech-specs">
+            <div class="tech-spec">
+                <strong>AI 모델</strong>
+                Claude 3.7 Sonnet<br>
+                (기본 모델)
+            </div>
+            <div class="tech-spec">
+                <strong>API 서비스</strong>
+                AWS Bedrock<br>
+                Runtime API
+            </div>
+            <div class="tech-spec">
+                <strong>지원 리전</strong>
+                us-west-2<br>
+                (Cross-Region)
+            </div>
+            <div class="tech-spec">
+                <strong>인증 방식</strong>
+                Bearer Token<br>
+                (API Key)
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <h2>📝 테스트용 샘플 콘텐츠</h2>
+        
+        <div class="demo-content">
+            <h3>AWS Bedrock 소개</h3>
+            <p>
+                Amazon Bedrock은 Amazon Web Services(AWS)에서 제공하는 완전관리형 서비스로, 
+                고성능 기반 모델(Foundation Models, FM)을 API를 통해 사용할 수 있게 해줍니다.
+            </p>
+            
+            <div class="highlight">
+                <strong>주요 특징:</strong>
+                <ul>
+                    <li>Anthropic의 Claude, Amazon의 Titan 등 다양한 AI 모델 지원</li>
+                    <li>서버리스 아키텍처로 인프라 관리 불필요</li>
+                    <li>기업급 보안 및 프라이버시 보장</li>
+                    <li>사용한 만큼만 지불하는 종량제 요금</li>
+                </ul>
+            </div>
+
+            <h4>지원 모델 목록</h4>
+            <ul>
+                <li><strong>Claude 3.7 Sonnet:</strong> 균형잡힌 성능과 속도를 제공하는 기본 모델</li>
+                <li><strong>Claude 4 Sonnet:</strong> 최신 고성능 모델로 복잡한 추론 작업에 최적화</li>
+                <li><strong>Amazon Nova Pro:</strong> 멀티모달 기능을 지원하는 고성능 모델</li>
+                <li><strong>Amazon Nova Lite:</strong> 빠르고 경제적인 경량 모델</li>
+            </ul>
+
+            <h4>사용 사례</h4>
+            <p>
+                이 Extension을 사용하여 현재 페이지의 내용을 분석하고, 
+                다음과 같은 질문들을 Claude에게 물어보세요:
+            </p>
+            <ul>
+                <li>"이 페이지의 주요 내용을 요약해주세요"</li>
+                <li>"AWS Bedrock의 핵심 장점은 무엇인가요?"</li>
+                <li>"지원되는 AI 모델들의 차이점을 설명해주세요"</li>
+                <li>"이 서비스를 어떤 상황에서 사용하면 좋을까요?"</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="highlight">
+            <h3>🎯 Extension 테스트 가이드</h3>
+            <p>
+                <strong>이 페이지에서 Extension을 테스트해보세요!</strong><br>
+                우측 상단의 Extension 아이콘을 클릭하고 다양한 기능들을 시도해보세요.
+                페이지 분석, 요약, 채팅 등 모든 기능이 이 콘텐츠를 바탕으로 동작합니다.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Extension 테스트를 위한 페이지 메타데이터
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎯 Claude AI Extension 데모 페이지 로드 완료');
+            console.log('Extension 아이콘을 클릭하여 기능을 테스트해보세요!');
+        });
+
+        // 페이지 상호작용 시뮬레이션
+        let interactionCount = 0;
+        document.addEventListener('click', function() {
+            interactionCount++;
+            if (interactionCount % 10 === 0) {
+                console.log(`페이지 상호작용 ${interactionCount}회 - Extension으로 분석해보세요!`);
+            }
+        });
+    </script>
+</body>
+</html>
