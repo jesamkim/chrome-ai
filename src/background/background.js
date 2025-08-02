@@ -314,6 +314,11 @@ async function handlePageAnalysisRequest(data, sendResponse) {
         userPrompt = `다음 웹페이지의 핵심 내용을 정리해주세요:\n\n${pageContent}`;
         break;
       
+      case 'translate':
+        systemPrompt = '다음 웹페이지 내용을 한국어로 번역해주세요. 이미 한국어인 내용은 그대로 유지하고, 외국어 부분만 자연스러운 한국어로 번역해주세요.';
+        userPrompt = `다음 웹페이지를 한국어로 번역해주세요:\n\n${pageContent}`;
+        break;
+      
       default:
         systemPrompt = '웹페이지 내용을 분석하고 사용자에게 도움이 될 만한 정보를 제공해주세요.';
         userPrompt = `다음 웹페이지를 분석해주세요:\n\n${pageContent}`;

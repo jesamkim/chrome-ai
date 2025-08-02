@@ -217,8 +217,35 @@ class PopupManager {
     this.showScreen('analysis');
   }
 
-  showChatScreen() {
+  async showChatScreen() {
     this.showScreen('chat');
+    
+    // 페이지 컨텍스트가 없으면 추가
+    if (this.chatHistory.length === 0) {
+      try {
+        // 현재 활성 탭 가져오기
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        
+        if (tab) {
+          // 페이지 내용 추출
+          const pageContent = await this.extractPageContent(tab);
+          
+          // 시스템 메시지로 페이지 컨텍스트 추가
+          this.chatHistory.push({
+            role: 'system',
+            content: `현재 사용자가 보고 있는 페이지 정보:
+${pageContent}
+
+위 페이지 내용을 바탕으로 사용자의 질문에 답변해주세요.`
+          });
+          
+          console.log('✅ 채팅에 페이지 컨텍스트 추가됨');
+        }
+      } catch (error) {
+        console.warn('⚠️ 페이지 컨텍스트 추가 실패:', error);
+      }
+    }
+    
     // 채팅 입력에 포커스
     setTimeout(() => {
       this.chatInput?.focus();
@@ -295,7 +322,7 @@ class PopupManager {
     const actionMessages = {
       summarize: '페이지 요약 중...',
       keyPoints: '핵심 포인트 추출 중...',
-      translate: '번역 중...'
+      translate: '한국어로 번역 중...'
     };
 
     const analysisTypes = {
@@ -442,12 +469,19 @@ class PopupManager {
           <div class="welcome-message">
             <div class="message assistant">
               <div class="message-content">
-                안녕하세요! 현재 페이지에 대해 궁금한 것이 있으시면 언제든 물어보세요. 😊
+                안녕하세요! 현재 페이지에 대해 궁금한 것이 있으시면 언제든 물어보세요. 😊<br><br>
+                예시 질문:<br>
+                • 이 페이지의 주요 내용은 무엇인가요?<br>
+                • 핵심 포인트를 정리해주세요<br>
+                • 이 내용을 쉽게 설명해주세요
               </div>
             </div>
           </div>
         `;
       }
+      
+      // 페이지 컨텍스트 다시 로드
+      this.showChatScreen();
     }
   }
 
@@ -496,13 +530,13 @@ URL: ${tab.url}
 
   async extractPageContent(tab) {
     try {
-      // Content Script 응답 대기 시간 제한 (5초)
+      // 먼저 기존 Content Script에 메시지 시도
       const contentResponse = await Promise.race([
         chrome.tabs.sendMessage(tab.id, {
           type: 'EXTRACT_PAGE_CONTENT'
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Content Script 응답 시간 초과')), 5000)
+          setTimeout(() => reject(new Error('Content Script 응답 시간 초과')), 3000)
         )
       ]);
       
@@ -513,7 +547,34 @@ URL: ${tab.url}
         throw new Error('페이지 내용을 추출할 수 없습니다.');
       }
     } catch (contentError) {
-      console.warn('⚠️ Content Script 응답 없음, 기본 정보 사용:', contentError.message);
+      console.warn('⚠️ Content Script 응답 없음, 동적 주입 시도:', contentError.message);
+      
+      // Content Script 동적 주입 시도
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['src/content/content.js']
+        });
+        
+        console.log('🔄 Content Script 동적 주입 완료, 재시도...');
+        
+        // 잠시 대기 후 재시도
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const retryResponse = await chrome.tabs.sendMessage(tab.id, {
+          type: 'EXTRACT_PAGE_CONTENT'
+        });
+        
+        if (retryResponse && retryResponse.success) {
+          console.log('✅ 동적 주입 후 페이지 내용 추출 성공');
+          return retryResponse.content;
+        }
+      } catch (injectionError) {
+        console.warn('⚠️ Content Script 동적 주입 실패:', injectionError.message);
+      }
+      
+      // 모든 시도 실패 시 기본 정보 반환
+      console.warn('⚠️ 모든 Content Script 시도 실패, 기본 정보 사용');
       return this.generateBasicPageInfo(tab);
     }
   }

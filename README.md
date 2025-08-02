@@ -2,12 +2,6 @@
 
 Amazon Bedrock 기반 웹페이지 분석 AI 어시스턴트 Chrome Extension
 
-## 🎨 Extension 아이콘
-
-이 Extension은 고품질 2048x2048 원본 아이콘에서 생성된 다음 크기의 아이콘을 사용합니다:
-- **16x16px**: 브라우저 툴바 및 컨텍스트 메뉴
-- **48x48px**: Extension 관리 페이지
-- **128x128px**: Chrome 웹 스토어 및 설치 대화상자
 
 ## 🚀 주요 기능
 
