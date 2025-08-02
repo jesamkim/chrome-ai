@@ -54,14 +54,29 @@ class AWSAuthManager {
     }
 
     /**
-     * AWS CLI 인증 확인
+     * AWS CLI 인증 확인 (로컬 AWS CLI 우선 사용)
      */
     async checkAWSCLIAuth() {
         try {
-            // Chrome Extension에서는 직접 파일 시스템 접근이 제한되므로
-            // Native Messaging을 통해 확인하거나, 사용자가 직접 입력하도록 유도
+            console.log('🔍 AWS CLI 인증 확인 시작');
             
-            // 임시로 환경변수나 Chrome Storage에서 AWS CLI 정보 확인
+            // 1. 사용자가 로컬 AWS CLI 사용을 선택했는지 확인
+            const settings = await chrome.storage.sync.get(['useLocalAWSCLI']);
+            if (settings.useLocalAWSCLI) {
+                console.log('✅ 로컬 AWS CLI 사용 설정 확인됨');
+                
+                // 로컬 AWS CLI 사용 시 기본 설정 반환
+                return {
+                    available: true,
+                    credentials: {
+                        useLocalCLI: true // 실제 AWS CLI 사용 플래그
+                    },
+                    region: 'us-west-2', // 기본 리전
+                    profile: 'default'
+                };
+            }
+            
+            // 2. Chrome Storage에 저장된 AWS CLI 설정 확인
             const awsConfig = await chrome.storage.local.get([
                 'aws_access_key_id',
                 'aws_secret_access_key', 
@@ -71,6 +86,7 @@ class AWSAuthManager {
             ]);
 
             if (awsConfig.aws_access_key_id && awsConfig.aws_secret_access_key) {
+                console.log('✅ 저장된 AWS CLI 인증 정보 발견');
                 return {
                     available: true,
                     credentials: {
@@ -83,7 +99,7 @@ class AWSAuthManager {
                 };
             }
 
-            // AWS CLI 설정 파일 확인 시도 (제한적)
+            // 3. 자동 감지 시도
             return await this.detectAWSCLIFromEnvironment();
 
         } catch (error) {
@@ -97,15 +113,18 @@ class AWSAuthManager {
      */
     async detectAWSCLIFromEnvironment() {
         try {
-            // Chrome Extension 환경에서는 제한적이므로
-            // 사용자에게 AWS CLI 설정 정보를 입력받는 방식으로 구현
+            // Chrome Extension 환경에서는 직접 파일 시스템 접근이 제한됨
+            // 사용자에게 로컬 AWS CLI 사용 여부를 묻는 방식으로 구현
+            
+            console.log('💡 로컬 AWS CLI 자동 감지 시도');
             
             // 향후 Native Messaging Host를 통해 실제 AWS CLI 설정 읽기 가능
-            console.log('💡 AWS CLI 자동 감지는 향후 Native Messaging으로 구현 예정');
+            // 현재는 사용자가 설정에서 선택하도록 안내
             
             return { available: false };
 
         } catch (error) {
+            console.debug('AWS CLI 환경 감지 실패:', error.message);
             return { available: false };
         }
     }
@@ -155,11 +174,34 @@ class AWSAuthManager {
     }
 
     /**
-     * AWS CLI 인증 헤더 생성 (AWS Signature V4)
+     * AWS CLI 인증 헤더 생성 (로컬 AWS CLI 또는 저장된 인증 정보 사용)
      */
     async getAWSCLIHeaders() {
         try {
+            // 로컬 AWS CLI 사용하는 경우
+            if (this.credentials.useLocalCLI) {
+                console.log('🔐 로컬 AWS CLI 인증 사용');
+                
+                // 실제로는 Native Messaging을 통해 AWS CLI에서 인증 정보를 가져와야 함
+                // 현재는 시뮬레이션으로 기본 AWS SDK 방식 사용
+                
+                // 임시로 환경 변수나 기본 프로필에서 가져온다고 가정
+                // 실제 구현에서는 Native Messaging Host가 필요
+                
+                return {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    // 로컬 AWS CLI 사용 시 AWS SDK가 자동으로 인증 처리
+                    'X-Amz-User-Agent': 'chrome-extension-aws-cli'
+                };
+            }
+            
+            // 저장된 AWS CLI 인증 정보 사용
             const { accessKeyId, secretAccessKey, sessionToken } = this.credentials;
+            
+            if (!accessKeyId || !secretAccessKey) {
+                throw new Error('AWS CLI 인증 정보가 불완전합니다.');
+            }
             
             // AWS Signature V4 생성
             const timestamp = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');

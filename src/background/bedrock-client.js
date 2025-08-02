@@ -60,6 +60,12 @@ class BedrockClient {
         region: authInfo.region
       });
 
+      // 로컬 AWS CLI 사용 시 추가 설정
+      if (authInfo.authType === 'aws-cli' && this.authManager.credentials.useLocalCLI) {
+        console.log('🔧 로컬 AWS CLI 사용 모드 활성화');
+        // 향후 Native Messaging Host를 통해 실제 AWS CLI 인증 처리
+      }
+
       // 선택된 모델 로드
       const result = await chrome.storage.sync.get(['selectedModel']);
       this.currentModel = result.selectedModel || 'claude-3.7-sonnet';

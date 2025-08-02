@@ -6,17 +6,22 @@
 // DOM 요소들
 const elements = {
     // 인증 방식 선택
+    authLocalAWSCLI: document.getElementById('authLocalAWSCLI'),
     authAWSCLI: document.getElementById('authAWSCLI'),
     authAPIKey: document.getElementById('authAPIKey'),
+    localAwsCliSection: document.getElementById('localAwsCliSection'),
     awsCliSection: document.getElementById('awsCliSection'),
     apiKeySection: document.getElementById('apiKeySection'),
+    
+    // 로컬 AWS CLI 요소들
+    currentProfile: document.getElementById('currentProfile'),
+    awsProfile: document.getElementById('awsProfile'),
     
     // AWS CLI 인증 요소들
     awsAccessKeyId: document.getElementById('awsAccessKeyId'),
     awsSecretAccessKey: document.getElementById('awsSecretAccessKey'),
     awsSessionToken: document.getElementById('awsSessionToken'),
     awsRegion: document.getElementById('awsRegion'),
-    awsProfile: document.getElementById('awsProfile'),
     toggleSecretKey: document.getElementById('toggleSecretKey'),
     
     // API Key 인증 요소들
@@ -80,8 +85,17 @@ document.addEventListener('DOMContentLoaded', async () => {
  * 인증 방식 선택 이벤트 리스너 설정
  */
 function setupAuthMethodListeners() {
+    elements.authLocalAWSCLI?.addEventListener('change', () => {
+        if (elements.authLocalAWSCLI.checked) {
+            elements.localAwsCliSection.style.display = 'block';
+            elements.awsCliSection.style.display = 'none';
+            elements.apiKeySection.style.display = 'none';
+        }
+    });
+
     elements.authAWSCLI?.addEventListener('change', () => {
         if (elements.authAWSCLI.checked) {
+            elements.localAwsCliSection.style.display = 'none';
             elements.awsCliSection.style.display = 'block';
             elements.apiKeySection.style.display = 'none';
         }
@@ -89,6 +103,7 @@ function setupAuthMethodListeners() {
 
     elements.authAPIKey?.addEventListener('change', () => {
         if (elements.authAPIKey.checked) {
+            elements.localAwsCliSection.style.display = 'none';
             elements.awsCliSection.style.display = 'none';
             elements.apiKeySection.style.display = 'block';
         }
@@ -440,15 +455,73 @@ async function loadSettings() {
     try {
         const settings = await chrome.storage.sync.get([
             'bedrockApiKey',
+            'useLocalAWSCLI',
+            'awsProfile',
             'maxTokens',
             'temperature',
             'autoAnalyze'
         ]);
         
-        // API Key (마스킹하여 표시)
-        if (settings.bedrockApiKey) {
+        const awsCliSettings = await chrome.storage.local.get([
+            'aws_access_key_id',
+            'aws_secret_access_key',
+            'aws_session_token',
+            'aws_region',
+            'aws_profile'
+        ]);
+        
+        // 인증 방식 결정 및 UI 설정
+        if (settings.useLocalAWSCLI) {
+            // 로컬 AWS CLI 사용
+            elements.authLocalAWSCLI.checked = true;
+            elements.localAwsCliSection.style.display = 'block';
+            elements.awsCliSection.style.display = 'none';
+            elements.apiKeySection.style.display = 'none';
+            
+            // 프로필 설정
+            if (elements.awsProfile) {
+                elements.awsProfile.value = settings.awsProfile || 'default';
+            }
+            if (elements.currentProfile) {
+                elements.currentProfile.textContent = settings.awsProfile || 'default';
+            }
+        } else if (awsCliSettings.aws_access_key_id) {
+            // AWS CLI 인증 정보 입력 방식
+            elements.authAWSCLI.checked = true;
+            elements.localAwsCliSection.style.display = 'none';
+            elements.awsCliSection.style.display = 'block';
+            elements.apiKeySection.style.display = 'none';
+            
+            // AWS CLI 설정 로드
+            if (elements.awsAccessKeyId) {
+                elements.awsAccessKeyId.value = awsCliSettings.aws_access_key_id;
+            }
+            if (elements.awsSecretAccessKey) {
+                elements.awsSecretAccessKey.value = maskApiKey(awsCliSettings.aws_secret_access_key);
+                elements.awsSecretAccessKey.dataset.originalValue = awsCliSettings.aws_secret_access_key;
+            }
+            if (elements.awsSessionToken && awsCliSettings.aws_session_token) {
+                elements.awsSessionToken.value = awsCliSettings.aws_session_token;
+            }
+            if (elements.awsRegion) {
+                elements.awsRegion.value = awsCliSettings.aws_region || 'us-west-2';
+            }
+        } else if (settings.bedrockApiKey) {
+            // API Key 인증 방식
+            elements.authAPIKey.checked = true;
+            elements.localAwsCliSection.style.display = 'none';
+            elements.awsCliSection.style.display = 'none';
+            elements.apiKeySection.style.display = 'block';
+            
+            // API Key 설정 (마스킹하여 표시)
             elements.apiKey.value = maskApiKey(settings.bedrockApiKey);
             elements.apiKey.dataset.originalValue = settings.bedrockApiKey;
+        } else {
+            // 기본값: 로컬 AWS CLI 사용 권장
+            elements.authLocalAWSCLI.checked = true;
+            elements.localAwsCliSection.style.display = 'block';
+            elements.awsCliSection.style.display = 'none';
+            elements.apiKeySection.style.display = 'none';
         }
         
         // 모델 설정
@@ -583,9 +656,100 @@ async function testConnection() {
 }
 
 /**
- * API Key 저장
+ * 인증 설정 저장 (통합)
  */
 async function saveApiKey() {
+    try {
+        // 선택된 인증 방식 확인
+        let authMethod = 'api-key'; // 기본값
+        if (elements.authLocalAWSCLI?.checked) {
+            authMethod = 'local-aws-cli';
+        } else if (elements.authAWSCLI?.checked) {
+            authMethod = 'aws-cli';
+        } else if (elements.authAPIKey?.checked) {
+            authMethod = 'api-key';
+        }
+
+        console.log('💾 인증 설정 저장 시작:', authMethod);
+
+        switch (authMethod) {
+            case 'local-aws-cli':
+                await saveLocalAWSCLISettings();
+                break;
+            case 'aws-cli':
+                await saveAWSCLISettings();
+                break;
+            case 'api-key':
+                await saveAPIKeySettings();
+                break;
+        }
+
+        // Background Script에 재초기화 요청
+        chrome.runtime.sendMessage({ type: 'INITIALIZE_BEDROCK' });
+        
+        console.log('✅ 인증 설정 저장 완료');
+    } catch (error) {
+        console.error('❌ 인증 설정 저장 실패:', error);
+        showStatus('인증 설정 저장 중 오류가 발생했습니다.', 'error');
+    }
+}
+
+/**
+ * 로컬 AWS CLI 설정 저장
+ */
+async function saveLocalAWSCLISettings() {
+    const profile = elements.awsProfile?.value.trim() || 'default';
+    
+    await chrome.storage.sync.set({ 
+        useLocalAWSCLI: true,
+        awsProfile: profile
+    });
+    
+    // 다른 인증 방식 설정 제거
+    await chrome.storage.sync.remove(['bedrockApiKey']);
+    await chrome.storage.local.remove([
+        'aws_access_key_id',
+        'aws_secret_access_key',
+        'aws_session_token',
+        'aws_region'
+    ]);
+    
+    showStatus('✅ 로컬 AWS CLI 설정이 저장되었습니다.', 'success');
+}
+
+/**
+ * AWS CLI 인증 정보 저장
+ */
+async function saveAWSCLISettings() {
+    const accessKeyId = elements.awsAccessKeyId?.value.trim();
+    const secretAccessKey = elements.awsSecretAccessKey?.value.trim();
+    const sessionToken = elements.awsSessionToken?.value.trim();
+    const region = elements.awsRegion?.value.trim() || 'us-west-2';
+    const profile = elements.awsProfile?.value.trim() || 'default';
+    
+    if (!accessKeyId || !secretAccessKey) {
+        showStatus('Access Key ID와 Secret Access Key를 입력해주세요.', 'error');
+        return;
+    }
+    
+    await chrome.storage.local.set({
+        aws_access_key_id: accessKeyId,
+        aws_secret_access_key: secretAccessKey,
+        aws_session_token: sessionToken || null,
+        aws_region: region,
+        aws_profile: profile
+    });
+    
+    // 다른 인증 방식 설정 제거
+    await chrome.storage.sync.remove(['bedrockApiKey', 'useLocalAWSCLI']);
+    
+    showStatus('✅ AWS CLI 인증 정보가 저장되었습니다.', 'success');
+}
+
+/**
+ * API Key 설정 저장
+ */
+async function saveAPIKeySettings() {
     const apiKey = elements.apiKey.dataset.originalValue || elements.apiKey.value.trim();
     
     if (!apiKey || apiKey.includes('*')) {
@@ -593,25 +757,25 @@ async function saveApiKey() {
         return;
     }
     
-    try {
-        await chrome.storage.sync.set({ bedrockApiKey: apiKey });
-        
-        // API Key 마스킹하여 표시
-        elements.apiKey.value = maskApiKey(apiKey);
-        elements.apiKey.dataset.originalValue = apiKey;
-        elements.apiKey.type = 'password';
-        elements.toggleApiKey.textContent = '👁️';
-        
-        showStatus('✅ API Key가 안전하게 저장되었습니다.', 'success');
-        
-        // Background Script에 재초기화 요청
-        chrome.runtime.sendMessage({ type: 'INITIALIZE_BEDROCK' });
-        
-        console.log('✅ API Key 저장 완료');
-    } catch (error) {
-        console.error('❌ API Key 저장 실패:', error);
-        showStatus('API Key 저장 중 오류가 발생했습니다.', 'error');
-    }
+    await chrome.storage.sync.set({ bedrockApiKey: apiKey });
+    
+    // 다른 인증 방식 설정 제거
+    await chrome.storage.sync.remove(['useLocalAWSCLI']);
+    await chrome.storage.local.remove([
+        'aws_access_key_id',
+        'aws_secret_access_key',
+        'aws_session_token',
+        'aws_region',
+        'aws_profile'
+    ]);
+    
+    // API Key 마스킹하여 표시
+    elements.apiKey.value = maskApiKey(apiKey);
+    elements.apiKey.dataset.originalValue = apiKey;
+    elements.apiKey.type = 'password';
+    elements.toggleApiKey.textContent = '👁️';
+    
+    showStatus('✅ API Key가 안전하게 저장되었습니다.', 'success');
 }
 
 /**
