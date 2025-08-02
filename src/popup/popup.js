@@ -254,13 +254,41 @@ class PopupManager {
     try {
       this.showLoadingScreen('페이지 분석 중...');
       
+      // 현재 활성 탭 가져오기
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      if (!tab) {
+        throw new Error('현재 탭을 찾을 수 없습니다.');
+      }
+
+      // Content Script에서 페이지 내용 추출
+      let pageContent;
+      try {
+        const contentResponse = await chrome.tabs.sendMessage(tab.id, {
+          type: 'EXTRACT_PAGE_CONTENT'
+        });
+        
+        if (contentResponse && contentResponse.success) {
+          pageContent = contentResponse.content;
+        } else {
+          throw new Error('페이지 내용을 추출할 수 없습니다.');
+        }
+      } catch (contentError) {
+        console.warn('⚠️ Content Script 응답 없음, 기본 정보 사용');
+        pageContent = `페이지 제목: ${tab.title}\nURL: ${tab.url}`;
+      }
+
+      // Background Script에 분석 요청
       const response = await chrome.runtime.sendMessage({
         type: 'ANALYZE_PAGE',
-        action: 'general'
+        data: {
+          pageContent: pageContent,
+          analysisType: 'general'
+        }
       });
 
       if (response && response.success) {
-        this.displayAnalysisResult(response.result);
+        this.displayAnalysisResult(response.analysis);
         this.showAnalysisScreen();
       } else {
         throw new Error(response?.error || '분석 실패');
@@ -284,12 +312,60 @@ class PopupManager {
       translate: '번역 중...'
     };
 
+    const analysisTypes = {
+      summarize: 'summary',
+      keyPoints: 'key-points',
+      translate: 'translate'
+    };
+
     try {
       this.showLoadingScreen(actionMessages[action] || '처리 중...');
       
+      // 현재 활성 탭 가져오기
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      if (!tab) {
+        throw new Error('현재 탭을 찾을 수 없습니다.');
+      }
+
+      // Content Script에서 페이지 내용 추출
+      let pageContent;
+      try {
+        const contentResponse = await chrome.tabs.sendMessage(tab.id, {
+          type: 'EXTRACT_PAGE_CONTENT'
+        });
+        
+        if (contentResponse && contentResponse.success) {
+          pageContent = contentResponse.content;
+        } else {
+          throw new Error('페이지 내용을 추출할 수 없습니다.');
+        }
+      } catch (contentError) {
+        console.warn('⚠️ Content Script 응답 없음, 기본 정보 사용');
+        pageContent = `페이지 제목: ${tab.title}\nURL: ${tab.url}`;
+      }
+
+      // Background Script에 분석 요청
       const response = await chrome.runtime.sendMessage({
         type: 'ANALYZE_PAGE',
-        action: action
+        data: {
+          pageContent: pageContent,
+          analysisType: analysisTypes[action] || 'general'
+        }
+      });
+
+      if (response && response.success) {
+        this.displayAnalysisResult(response.analysis);
+        this.showAnalysisScreen();
+      } else {
+        throw new Error(response?.error || '분석 실패');
+      }
+    } catch (error) {
+      console.error(`❌ ${action} 실패:`, error);
+      this.displayAnalysisResult(`처리 중 오류가 발생했습니다: ${error.message}`);
+      this.showAnalysisScreen();
+    }
+  }
       });
 
       if (response && response.success) {
