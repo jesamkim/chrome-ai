@@ -366,20 +366,6 @@ class PopupManager {
       this.showAnalysisScreen();
     }
   }
-      });
-
-      if (response && response.success) {
-        this.displayAnalysisResult(response.result);
-        this.showAnalysisScreen();
-      } else {
-        throw new Error(response?.error || '처리 실패');
-      }
-    } catch (error) {
-      console.error(`❌ ${action} 실패:`, error);
-      this.displayAnalysisResult(`처리 중 오류가 발생했습니다: ${error.message}`);
-      this.showAnalysisScreen();
-    }
-  }
 
   displayAnalysisResult(result) {
     if (this.analysisContent) {
