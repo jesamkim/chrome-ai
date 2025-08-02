@@ -230,14 +230,11 @@ class PopupManager {
           // 페이지 내용 추출
           const pageContent = await this.extractPageContent(tab);
           
-          // 시스템 메시지로 페이지 컨텍스트 추가
-          this.chatHistory.push({
-            role: 'system',
-            content: `현재 사용자가 보고 있는 페이지 정보:
+          // 페이지 컨텍스트를 별도 저장 (system 메시지가 아닌 컨텍스트로)
+          this.pageContext = `현재 사용자가 보고 있는 페이지 정보:
 ${pageContent}
 
-위 페이지 내용을 바탕으로 사용자의 질문에 답변해주세요.`
-          });
+위 페이지 내용을 바탕으로 사용자의 질문에 답변해주세요.`;
           
           console.log('✅ 채팅에 페이지 컨텍스트 추가됨');
         }
@@ -399,6 +396,7 @@ ${pageContent}
             ...this.chatHistory,
             { role: 'user', content: message }
           ],
+          systemPrompt: this.pageContext || '현재 페이지에 대한 질문에 답변해주세요.',
           sessionId: 'popup-session',
           options: {
             maxTokens: 2000
@@ -464,6 +462,8 @@ ${pageContent}
   clearChatHistory() {
     if (confirm('채팅 기록을 모두 삭제하시겠습니까?')) {
       this.chatHistory = [];
+      this.pageContext = null; // 페이지 컨텍스트도 초기화
+      
       if (this.chatMessages) {
         this.chatMessages.innerHTML = `
           <div class="welcome-message">

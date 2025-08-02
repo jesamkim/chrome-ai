@@ -25,20 +25,6 @@ class BedrockClient {
         provider: 'anthropic',
         maxTokens: 8000,
         description: '최신 고성능 모델'
-      },
-      'nova-pro': {
-        id: 'us.amazon.nova-pro-v1:0',
-        name: 'Amazon Nova Pro',
-        provider: 'amazon',
-        maxTokens: 5000,
-        description: '고성능 멀티모달 모델'
-      },
-      'nova-lite': {
-        id: 'us.amazon.nova-lite-v1:0',
-        name: 'Amazon Nova Lite',
-        provider: 'amazon',
-        maxTokens: 3000,
-        description: '빠르고 경제적인 모델'
       }
     };
     

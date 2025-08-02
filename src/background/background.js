@@ -232,7 +232,7 @@ async function handleChatMessage(data, sendResponse) {
       throw new Error('Bedrock 클라이언트가 초기화되지 않았습니다. API Key를 설정해주세요.');
     }
 
-    const { messages, sessionId, options = {} } = data;
+    const { messages, systemPrompt, sessionId, options = {} } = data;
     
     if (!messages || !Array.isArray(messages)) {
       throw new Error('유효하지 않은 메시지 형식입니다.');
@@ -250,8 +250,13 @@ async function handleChatMessage(data, sendResponse) {
 
     console.log('💬 채팅 메시지 처리 시작:', messages.length, '개 메시지');
 
-    // Claude 호출 (쓰로틀링 고려)
-    const response = await bedrockClient.invokeClaude(messages, options);
+    // Claude 호출 (systemPrompt 포함)
+    const claudeOptions = {
+      ...options,
+      systemPrompt: systemPrompt
+    };
+    
+    const response = await bedrockClient.invokeClaude(messages, claudeOptions);
     
     // 세션에 메시지 추가
     if (sessionId) {
