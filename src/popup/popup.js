@@ -600,7 +600,7 @@ URL: ${tab.url || '알 수 없음'}
       throw new Error('Content Script 응답 없음');
       
     } catch (contentError) {
-      console.warn('⚠️ Content Script 1차 시도 실패:', contentError.message);
+      console.debug('🔍 Content Script 1차 시도 실패 (정상 동작):', contentError.message);
       
       // 3단계: Content Script 동적 주입 시도
       try {

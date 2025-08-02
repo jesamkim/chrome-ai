@@ -100,6 +100,14 @@ async function handleMessage(request, sender, sendResponse) {
                 });
                 break;
                 
+            case 'ANALYZE_PAGE':
+                await handleAnalyzePage(sendResponse);
+                break;
+                
+            case 'GET_PAGE_SUMMARY':
+                handleGetPageSummary(request.maxLength, sendResponse);
+                break;
+                
             default:
                 console.warn('⚠️ 알 수 없는 메시지 타입:', request.type);
                 sendResponse({ success: false, error: '알 수 없는 메시지 타입' });
@@ -119,11 +127,12 @@ async function handleExtractPageContent(sendResponse) {
             pageAnalyzer = new PageAnalyzer();
         }
         
-        const content = await pageAnalyzer.extractPageContent();
+        const analysis = await pageAnalyzer.analyzeCurrentPage();
+        const summary = pageAnalyzer.getPageSummary();
         
         sendResponse({
             success: true,
-            content: content,
+            content: summary,
             metadata: {
                 url: window.location.href,
                 title: document.title,
@@ -147,9 +156,58 @@ async function handleExtractPageContent(sendResponse) {
         });
     }
 }
+
+/**
+ * 페이지 분석 처리
+ */
+async function handleAnalyzePage(sendResponse) {
+    try {
+        if (!pageAnalyzer) {
+            pageAnalyzer = new PageAnalyzer();
+        }
+        
+        const analysis = await pageAnalyzer.analyzeCurrentPage();
+        
+        sendResponse({
+            success: true,
+            analysis: analysis
+        });
         
     } catch (error) {
-        console.error('❌ Content Script 초기화 실패:', error);
+        console.error('페이지 분석 실패:', error);
+        sendResponse({
+            success: false,
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 페이지 요약 처리
+ */
+function handleGetPageSummary(maxLength, sendResponse) {
+    try {
+        if (!pageAnalyzer || !pageAnalyzer.lastAnalysis) {
+            sendResponse({
+                success: false,
+                error: '페이지가 아직 분석되지 않았습니다.'
+            });
+            return;
+        }
+        
+        const summary = pageAnalyzer.getPageSummary(maxLength);
+        
+        sendResponse({
+            success: true,
+            summary: summary
+        });
+        
+    } catch (error) {
+        console.error('페이지 요약 실패:', error);
+        sendResponse({
+            success: false,
+            error: error.message
+        });
     }
 }
 
@@ -214,10 +272,7 @@ class PageAnalyzer {
             headings: this.extractHeadings(),
             paragraphs: this.extractParagraphs(),
             lists: this.extractLists(),
-            tables: this.extractTables(),
-            links: this.extractLinks(),
-            images: this.extractImages(),
-            codeBlocks: this.extractCodeBlocks()
+            links: this.extractLinks()
         };
     }
 
@@ -289,34 +344,6 @@ class PageAnalyzer {
     }
 
     /**
-     * 테이블 추출
-     */
-    extractTables() {
-        const tables = [];
-        const tableElements = document.querySelectorAll('table');
-        
-        tableElements.forEach((element, index) => {
-            if (index < 5) { // 최대 5개
-                const headers = Array.from(element.querySelectorAll('th')).map(th => 
-                    th.textContent.trim()
-                );
-                
-                const rows = Array.from(element.querySelectorAll('tr')).slice(0, 10).map(tr => 
-                    Array.from(tr.querySelectorAll('td')).map(td => 
-                        td.textContent.trim().substring(0, 100)
-                    )
-                ).filter(row => row.length > 0);
-                
-                if (headers.length > 0 || rows.length > 0) {
-                    tables.push({ headers, rows });
-                }
-            }
-        });
-        
-        return tables;
-    }
-
-    /**
      * 링크 추출
      */
     extractLinks() {
@@ -342,51 +369,6 @@ class PageAnalyzer {
     }
 
     /**
-     * 이미지 추출
-     */
-    extractImages() {
-        const images = [];
-        const imageElements = document.querySelectorAll('img[src]');
-        
-        imageElements.forEach((element, index) => {
-            if (index < 10) { // 최대 10개
-                images.push({
-                    src: element.src,
-                    alt: element.alt || '',
-                    title: element.title || '',
-                    width: element.naturalWidth || element.width,
-                    height: element.naturalHeight || element.height
-                });
-            }
-        });
-        
-        return images;
-    }
-
-    /**
-     * 코드 블록 추출
-     */
-    extractCodeBlocks() {
-        const codeBlocks = [];
-        const codeElements = document.querySelectorAll('pre code, code, .highlight');
-        
-        codeElements.forEach((element, index) => {
-            if (index < 10) { // 최대 10개
-                const code = element.textContent.trim();
-                if (code.length > 10) {
-                    codeBlocks.push({
-                        code: code.substring(0, 1000), // 최대 1000자
-                        language: this.detectCodeLanguage(element),
-                        length: code.length
-                    });
-                }
-            }
-        });
-        
-        return codeBlocks;
-    }
-
-    /**
      * 메타데이터 추출
      */
     extractMetadata() {
@@ -394,11 +376,8 @@ class PageAnalyzer {
             description: '',
             keywords: '',
             author: '',
-            publishDate: '',
-            modifiedDate: '',
             ogTitle: '',
-            ogDescription: '',
-            ogImage: ''
+            ogDescription: ''
         };
 
         // Meta 태그에서 정보 추출
@@ -423,9 +402,6 @@ class PageAnalyzer {
                         break;
                     case 'og:description':
                         metadata.ogDescription = content;
-                        break;
-                    case 'og:image':
-                        metadata.ogImage = content;
                         break;
                 }
             }
@@ -472,29 +448,6 @@ class PageAnalyzer {
     }
 
     /**
-     * 코드 언어 감지
-     */
-    detectCodeLanguage(element) {
-        // 클래스명에서 언어 추출
-        const className = element.className;
-        const langMatch = className.match(/language-(\w+)|lang-(\w+)|(\w+)-code/);
-        if (langMatch) {
-            return langMatch[1] || langMatch[2] || langMatch[3];
-        }
-        
-        // 부모 요소 확인
-        const parent = element.parentElement;
-        if (parent && parent.className) {
-            const parentLangMatch = parent.className.match(/language-(\w+)|lang-(\w+)/);
-            if (parentLangMatch) {
-                return parentLangMatch[1] || parentLangMatch[2];
-            }
-        }
-        
-        return 'unknown';
-    }
-
-    /**
      * 캐시 키 생성
      */
     generateCacheKey(url, title) {
@@ -505,7 +458,11 @@ class PageAnalyzer {
      * 페이지 내용을 텍스트로 요약
      */
     getPageSummary(maxLength = 2000) {
-        if (!this.lastAnalysis) return '';
+        if (!this.lastAnalysis) {
+            // 분석이 없으면 기본 텍스트 추출
+            const bodyText = document.body ? document.body.innerText.slice(0, maxLength) : '';
+            return `페이지 제목: ${document.title}\nURL: ${window.location.href}\n\n내용:\n${bodyText}`;
+        }
         
         const { content, metadata } = this.lastAnalysis;
         let summary = '';
@@ -545,139 +502,10 @@ async function performAutoAnalysis() {
         
         const analysis = await pageAnalyzer.analyzeCurrentPage();
         
-        // 통계 업데이트
-        await updateStatistics('analyzedPages');
-        
         console.log('✅ 자동 페이지 분석 완료');
         
     } catch (error) {
         console.error('❌ 자동 페이지 분석 실패:', error);
-    }
-}
-
-/**
- * 통계 업데이트
- */
-async function updateStatistics(type, value = 1) {
-    try {
-        const stats = await chrome.storage.local.get([type, 'lastUsed']);
-        const currentValue = stats[type] || 0;
-        
-        await chrome.storage.local.set({
-            [type]: currentValue + value,
-            lastUsed: Date.now()
-        });
-        
-    } catch (error) {
-        console.error('통계 업데이트 실패:', error);
-    }
-}
-
-/**
- * 메시지 처리
- */
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('📨 Content Script 메시지 수신:', request.type);
-    
-    switch (request.type) {
-        case 'EXTRACT_PAGE_CONTENT':
-            handleExtractPageContent(sendResponse);
-            break;
-        
-        case 'ANALYZE_PAGE':
-            handleAnalyzePage(sendResponse);
-            break;
-        
-        case 'GET_PAGE_SUMMARY':
-            handleGetPageSummary(request.maxLength, sendResponse);
-            break;
-        
-        default:
-            console.warn('⚠️ 알 수 없는 메시지 타입:', request.type);
-            sendResponse({ success: false, error: '알 수 없는 요청 타입' });
-    }
-    
-    return true; // 비동기 응답
-});
-
-/**
- * 페이지 내용 추출 처리
- */
-async function handleExtractPageContent(sendResponse) {
-    try {
-        if (!pageAnalyzer) {
-            pageAnalyzer = new PageAnalyzer();
-        }
-        
-        const analysis = await pageAnalyzer.analyzeCurrentPage();
-        const summary = pageAnalyzer.getPageSummary();
-        
-        sendResponse({
-            success: true,
-            content: summary,
-            fullAnalysis: analysis
-        });
-        
-    } catch (error) {
-        console.error('페이지 내용 추출 실패:', error);
-        sendResponse({
-            success: false,
-            error: error.message
-        });
-    }
-}
-
-/**
- * 페이지 분석 처리
- */
-async function handleAnalyzePage(sendResponse) {
-    try {
-        if (!pageAnalyzer) {
-            pageAnalyzer = new PageAnalyzer();
-        }
-        
-        const analysis = await pageAnalyzer.analyzeCurrentPage();
-        
-        sendResponse({
-            success: true,
-            analysis: analysis
-        });
-        
-    } catch (error) {
-        console.error('페이지 분석 실패:', error);
-        sendResponse({
-            success: false,
-            error: error.message
-        });
-    }
-}
-
-/**
- * 페이지 요약 처리
- */
-function handleGetPageSummary(maxLength, sendResponse) {
-    try {
-        if (!pageAnalyzer || !pageAnalyzer.lastAnalysis) {
-            sendResponse({
-                success: false,
-                error: '페이지가 아직 분석되지 않았습니다.'
-            });
-            return;
-        }
-        
-        const summary = pageAnalyzer.getPageSummary(maxLength);
-        
-        sendResponse({
-            success: true,
-            summary: summary
-        });
-        
-    } catch (error) {
-        console.error('페이지 요약 실패:', error);
-        sendResponse({
-            success: false,
-            error: error.message
-        });
     }
 }
 
