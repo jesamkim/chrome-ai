@@ -3,10 +3,16 @@
  * 웹페이지 분석 및 컨텍스트 추출
  */
 
-// 전역 변수
-let pageAnalyzer = null;
-let isInitialized = false;
-let messageListener = null;
+// 중복 로드 방지
+if (window.awsAiAssistantLoaded) {
+    console.log('⚠️ Content Script 이미 로드됨, 중복 로드 방지');
+} else {
+    window.awsAiAssistantLoaded = true;
+
+    // 전역 변수
+    let pageAnalyzer = null;
+    let isInitialized = false;
+    let messageListener = null;
 
 /**
  * Content Script 초기화
@@ -700,3 +706,5 @@ new MutationObserver(() => {
 }).observe(document, { subtree: true, childList: true });
 
 console.log('🎯 Content Script 로드 완료');
+
+} // 중복 로드 방지 블록 끝

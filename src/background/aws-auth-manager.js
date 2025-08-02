@@ -148,11 +148,20 @@ class AWSAuthManager {
      */
     async getAWSCLIHeaders() {
         try {
+            console.log('🔐 AWS CLI 헤더 생성 시작');
+            console.log('인증 정보:', {
+                hasAccessKeyId: !!this.credentials.accessKeyId,
+                hasSecretAccessKey: !!this.credentials.secretAccessKey,
+                hasSessionToken: !!this.credentials.sessionToken
+            });
+            
             const { accessKeyId, secretAccessKey, sessionToken } = this.credentials;
             
             if (!accessKeyId || !secretAccessKey) {
                 throw new Error('AWS CLI 인증 정보가 불완전합니다.');
             }
+            
+            console.warn('⚠️ AWS Signature V4 구현이 완전하지 않습니다. 실제 프로덕션에서는 완전한 구현이 필요합니다.');
             
             // AWS Signature V4 생성
             const timestamp = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
@@ -169,6 +178,7 @@ class AWSAuthManager {
                 headers['X-Amz-Security-Token'] = sessionToken;
             }
 
+            console.log('✅ AWS CLI 헤더 생성 완료');
             return headers;
 
         } catch (error) {

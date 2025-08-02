@@ -72,20 +72,32 @@ class TextContextManager {
     createStructuredContext(metadata, content) {
         const sections = {};
         
+        // 입력 데이터 유효성 검사
+        if (!content || typeof content !== 'object') {
+            console.warn('⚠️ 유효하지 않은 content 객체:', content);
+            return {
+                compressedText: `제목: ${metadata?.title || '제목 없음'}`,
+                originalLength: 0,
+                compressedLength: 0,
+                compressionRatio: 0,
+                sectionsIncluded: ['title']
+            };
+        }
+
         // 제목 (최고 우선순위)
-        sections.title = `제목: ${metadata.title}`;
+        sections.title = `제목: ${metadata?.title || '제목 없음'}`;
         
-        // 헤딩 추출
-        sections.headings = this.extractHeadings(content.headings);
+        // 헤딩 추출 (null 체크)
+        sections.headings = this.extractHeadings(content.headings || []);
         
-        // 메인 콘텐츠 추출
-        sections.mainContent = this.extractMainContent(content.paragraphs);
+        // 메인 콘텐츠 추출 (null 체크)
+        sections.mainContent = this.extractMainContent(content.paragraphs || []);
         
-        // 리스트 추출
-        sections.lists = this.extractLists(content.lists);
+        // 리스트 추출 (null 체크)
+        sections.lists = this.extractLists(content.lists || []);
         
-        // 테이블 추출
-        sections.tables = this.extractTables(content.tables);
+        // 테이블 추출 (null 체크)
+        sections.tables = this.extractTables(content.tables || []);
         
         // 메타데이터
         sections.metadata = this.extractMetadataText(metadata);
