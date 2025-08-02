@@ -5,23 +5,10 @@
 
 // DOM 요소들
 const elements = {
-    // 인증 방식 선택
-    authAWSCLI: document.getElementById('authAWSCLI'),
-    authAPIKey: document.getElementById('authAPIKey'),
-    awsCliSection: document.getElementById('awsCliSection'),
-    apiKeySection: document.getElementById('apiKeySection'),
-    
-    // AWS CLI 인증 요소들
-    awsAccessKeyId: document.getElementById('awsAccessKeyId'),
-    awsSecretAccessKey: document.getElementById('awsSecretAccessKey'),
-    awsSessionToken: document.getElementById('awsSessionToken'),
-    awsRegion: document.getElementById('awsRegion'),
-    awsProfile: document.getElementById('awsProfile'),
-    toggleSecretKey: document.getElementById('toggleSecretKey'),
-    
     // API Key 인증 요소들
     apiKey: document.getElementById('apiKey'),
     toggleApiKey: document.getElementById('toggleApiKey'),
+    apiKeySection: document.getElementById('apiKeySection'),
     
     // 공통 요소들
     testConnection: document.getElementById('testConnection'),
@@ -57,9 +44,6 @@ const elements = {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 설정 페이지 로드됨');
     
-    // 인증 방식 선택 이벤트 리스너
-    setupAuthMethodListeners();
-    
     // 비밀번호 토글 이벤트 리스너
     setupPasswordToggleListeners();
     
@@ -77,25 +61,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
- * 인증 방식 선택 이벤트 리스너 설정
- */
-function setupAuthMethodListeners() {
-    elements.authAWSCLI?.addEventListener('change', () => {
-        if (elements.authAWSCLI.checked) {
-            elements.awsCliSection.style.display = 'block';
-            elements.apiKeySection.style.display = 'none';
-        }
-    });
-
-    elements.authAPIKey?.addEventListener('change', () => {
-        if (elements.authAPIKey.checked) {
-            elements.awsCliSection.style.display = 'none';
-            elements.apiKeySection.style.display = 'block';
-        }
-    });
-}
-
-/**
  * 비밀번호 토글 이벤트 리스너 설정
  */
 function setupPasswordToggleListeners() {
@@ -105,14 +70,6 @@ function setupPasswordToggleListeners() {
         const isPassword = input.type === 'password';
         input.type = isPassword ? 'text' : 'password';
         elements.toggleApiKey.textContent = isPassword ? '🙈' : '👁️';
-    });
-
-    // Secret Access Key 토글
-    elements.toggleSecretKey?.addEventListener('click', () => {
-        const input = elements.awsSecretAccessKey;
-        const isPassword = input.type === 'password';
-        input.type = isPassword ? 'text' : 'password';
-        elements.toggleSecretKey.textContent = isPassword ? '🙈' : '👁️';
     });
 }
 
@@ -612,68 +569,24 @@ function updateTemperatureDisplay() {
  * 연결 테스트
  */
 async function testConnection() {
-    // 선택된 인증 방식 확인
-    let authMethod = 'api-key'; // 기본값
-    if (elements.authAWSCLI?.checked) {
-        authMethod = 'aws-cli';
-    } else if (elements.authAPIKey?.checked) {
-        authMethod = 'api-key';
-    }
-
-    console.log('🔍 연결 테스트 시작:', authMethod);
+    console.log('🔍 연결 테스트 시작: API Key 인증');
 
     // 버튼 상태 변경
     elements.testConnection.disabled = true;
     elements.testConnection.textContent = '테스트 중...';
+    showStatus('연결 테스트 중...', 'info');
     
     try {
-        if (authMethod === 'aws-cli') {
-            // AWS CLI 인증 정보 확인
-            const accessKeyId = elements.awsAccessKeyId?.value.trim();
-            const secretAccessKey = elements.awsSecretAccessKey?.value.trim();
-            
-            if (!accessKeyId || !secretAccessKey) {
-                showStatus('AWS Access Key ID와 Secret Access Key를 입력해주세요.', 'error');
-                return;
-            }
-
-            // AWS CLI 인증 정보 임시 저장
-            const sessionToken = elements.awsSessionToken?.value.trim();
-            const region = elements.awsRegion?.value.trim() || 'us-west-2';
-            const profile = elements.awsProfile?.value.trim() || 'default';
-
-            await chrome.storage.local.set({
-                aws_access_key_id: accessKeyId,
-                aws_secret_access_key: secretAccessKey,
-                aws_session_token: sessionToken || null,
-                aws_region: region,
-                aws_profile: profile
-            });
-
-            // API Key 설정 제거 (AWS CLI 우선)
-            await chrome.storage.sync.remove(['bedrockApiKey']);
-
-        } else {
-            // API Key 인증 확인
-            const apiKey = elements.apiKey.dataset.originalValue || elements.apiKey.value.trim();
-            
-            if (!apiKey || apiKey.includes('*')) {
-                showStatus('유효한 API Key를 입력해주세요.', 'error');
-                return;
-            }
-
-            // API Key 임시 저장
-            await chrome.storage.sync.set({ bedrockApiKey: apiKey });
-
-            // AWS CLI 설정 제거 (API Key 우선)
-            await chrome.storage.local.remove([
-                'aws_access_key_id',
-                'aws_secret_access_key',
-                'aws_session_token',
-                'aws_region',
-                'aws_profile'
-            ]);
+        // API Key 인증 확인
+        const apiKey = elements.apiKey.dataset.originalValue || elements.apiKey.value.trim();
+        
+        if (!apiKey || apiKey.includes('*')) {
+            showStatus('유효한 API Key를 입력해주세요.', 'error');
+            return;
         }
+
+        // API Key 임시 저장
+        await chrome.storage.sync.set({ bedrockApiKey: apiKey });
 
         // Background Script에 연결 테스트 요청
         const response = await chrome.runtime.sendMessage({
@@ -681,7 +594,7 @@ async function testConnection() {
         });
         
         if (response.success) {
-            showStatus(`✅ 연결 테스트 성공! ${authMethod === 'aws-cli' ? 'AWS CLI 인증' : 'API Key 인증'}이 정상적으로 작동합니다.`, 'success');
+            showStatus('✅ 연결 테스트 성공! API Key 인증이 정상적으로 작동합니다.', 'success');
             console.log('연결 테스트 응답:', response.response);
         } else {
             showStatus(`❌ 연결 테스트 실패: ${response.error}`, 'error');
@@ -698,66 +611,22 @@ async function testConnection() {
 }
 
 /**
- * 인증 설정 저장 (통합)
+ * API Key 설정 저장
  */
 async function saveApiKey() {
     try {
-        // 선택된 인증 방식 확인
-        let authMethod = 'api-key'; // 기본값
-        if (elements.authAWSCLI?.checked) {
-            authMethod = 'aws-cli';
-        } else if (elements.authAPIKey?.checked) {
-            authMethod = 'api-key';
-        }
+        console.log('💾 API Key 설정 저장 시작');
 
-        console.log('💾 인증 설정 저장 시작:', authMethod);
-
-        switch (authMethod) {
-            case 'aws-cli':
-                await saveAWSCLISettings();
-                break;
-            case 'api-key':
-                await saveAPIKeySettings();
-                break;
-        }
+        await saveAPIKeySettings();
 
         // Background Script에 재초기화 요청
         chrome.runtime.sendMessage({ type: 'INITIALIZE_BEDROCK' });
         
-        console.log('✅ 인증 설정 저장 완료');
+        console.log('✅ API Key 설정 저장 완료');
     } catch (error) {
-        console.error('❌ 인증 설정 저장 실패:', error);
-        showStatus('인증 설정 저장 중 오류가 발생했습니다.', 'error');
+        console.error('❌ API Key 설정 저장 실패:', error);
+        showStatus('API Key 설정 저장 중 오류가 발생했습니다.', 'error');
     }
-}
-
-/**
- * AWS CLI 인증 정보 저장
- */
-async function saveAWSCLISettings() {
-    const accessKeyId = elements.awsAccessKeyId?.value.trim();
-    const secretAccessKey = elements.awsSecretAccessKey?.value.trim();
-    const sessionToken = elements.awsSessionToken?.value.trim();
-    const region = elements.awsRegion?.value.trim() || 'us-west-2';
-    const profile = elements.awsProfile?.value.trim() || 'default';
-    
-    if (!accessKeyId || !secretAccessKey) {
-        showStatus('Access Key ID와 Secret Access Key를 입력해주세요.', 'error');
-        return;
-    }
-    
-    await chrome.storage.local.set({
-        aws_access_key_id: accessKeyId,
-        aws_secret_access_key: secretAccessKey,
-        aws_session_token: sessionToken || null,
-        aws_region: region,
-        aws_profile: profile
-    });
-    
-    // 다른 인증 방식 설정 제거
-    await chrome.storage.sync.remove(['bedrockApiKey']);
-    
-    showStatus('✅ AWS CLI 인증 정보가 저장되었습니다.', 'success');
 }
 
 /**
@@ -773,22 +642,13 @@ async function saveAPIKeySettings() {
     
     await chrome.storage.sync.set({ bedrockApiKey: apiKey });
     
-    // 다른 인증 방식 설정 제거
-    await chrome.storage.local.remove([
-        'aws_access_key_id',
-        'aws_secret_access_key',
-        'aws_session_token',
-        'aws_region',
-        'aws_profile'
-    ]);
-    
     // API Key 마스킹하여 표시
     elements.apiKey.value = maskApiKey(apiKey);
     elements.apiKey.dataset.originalValue = apiKey;
     elements.apiKey.type = 'password';
     elements.toggleApiKey.textContent = '👁️';
     
-    showStatus('✅ API Key가 안전하게 저장되었습니다.', 'success');
+    showStatus('✅ API Key가 저장되었습니다.', 'success');
 }
 
 /**

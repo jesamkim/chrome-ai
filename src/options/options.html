@@ -18,86 +18,17 @@
             <section class="settings-section">
                 <h2>🔑 AWS 인증 설정</h2>
                 
-                <!-- 인증 방식 선택 -->
+                <!-- API Key 설정 -->
                 <div class="form-group">
-                    <label>인증 방식:</label>
-                    <div class="auth-method-selector">
-                        <div class="auth-option">
-                            <input type="radio" id="authAPIKey" name="authMethod" value="api-key">
-                            <label for="authAPIKey">
-                                <strong>API Key 인증</strong> (권장)
-                                <small>Bedrock API Key 직접 입력 - 안정적</small>
-                            </label>
-                        </div>
-                        <div class="auth-option">
-                            <input type="radio" id="authAWSCLI" name="authMethod" value="aws-cli">
-                            <label for="authAWSCLI">
-                                <strong>AWS CLI 인증</strong> (실험적)
-                                <small>AWS Access Key/Secret Key 입력</small>
-                            </label>
-                        </div>
-                    </div>
                     <div class="info-box">
-                        <p>💡 <strong>권장 사항:</strong></p>
-                        <p><strong>API Key 인증</strong>이 더 안정적이고 설정이 간단합니다.</p>
-                        <p>AWS CLI 인증은 현재 실험적 기능으로 일부 환경에서 권한 오류가 발생할 수 있습니다.</p>
+                        <p>🔑 <strong>Bedrock API Key 인증</strong></p>
+                        <p>AWS Bedrock API Key를 입력하여 AI 모델에 접근합니다.</p>
+                        <p>안정적이고 설정이 간단한 인증 방식입니다.</p>
                     </div>
-                </div>
-
-                <!-- AWS CLI 인증 설정 -->
-                <div id="awsCliSection" class="auth-section" style="display: none;">
-                    <h3>AWS CLI 인증 정보</h3>
-                    
-                    <div class="warning-box" style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                        <p>⚠️ <strong>현재 제한사항:</strong></p>
-                        <p>AWS CLI 인증은 현재 AWS Signature V4 구현이 완전하지 않아 일부 환경에서 권한 오류가 발생할 수 있습니다.</p>
-                        <p><strong>권장:</strong> 안정적인 사용을 위해 <strong>"API Key 인증"</strong> 방식을 사용해주세요.</p>
-                    </div>
-                    
-                    <div class="info-box">
-                        <p>🔑 <strong>AWS CLI 설정 확인 방법:</strong></p>
-                        <p>터미널에서 다음 명령어를 실행하여 현재 설정을 확인하세요:</p>
-                        <p><code>aws configure list</code></p>
-                        <p>또는 <code>cat ~/.aws/credentials</code></p>
-                    </div>
-                    <div class="form-group">
-                        <label for="awsAccessKeyId">Access Key ID:</label>
-                        <input type="text" id="awsAccessKeyId" placeholder="AKIA...">
-                    </div>
-                    <div class="form-group">
-                        <label for="awsSecretAccessKey">Secret Access Key:</label>
-                        <div class="input-group">
-                            <input type="password" id="awsSecretAccessKey" placeholder="AWS Secret Access Key">
-                            <button type="button" id="toggleSecretKey" class="toggle-btn">👁️</button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="awsSessionToken">Session Token (선택사항):</label>
-                        <input type="text" id="awsSessionToken" placeholder="임시 자격 증명 사용 시">
-                    </div>
-                    <div class="form-group">
-                        <label for="awsRegion">Region:</label>
-                        <select id="awsRegion">
-                            <option value="us-west-2" selected>us-west-2 (Oregon)</option>
-                            <option value="us-east-1">us-east-1 (N. Virginia)</option>
-                            <option value="eu-west-1">eu-west-1 (Ireland)</option>
-                            <option value="ap-northeast-1">ap-northeast-1 (Tokyo)</option>
-                            <option value="ap-northeast-2">ap-northeast-2 (Seoul)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="awsProfile">Profile (선택사항):</label>
-                        <input type="text" id="awsProfile" placeholder="default" value="default">
-                    </div>
-                    <small class="help-text">
-                        💡 <strong>AWS CLI 설정 방법:</strong><br>
-                        1. 터미널에서 <code>aws configure</code> 실행<br>
-                        2. 또는 위 정보를 직접 입력하여 Extension에서 사용
-                    </small>
                 </div>
 
                 <!-- API Key 인증 설정 -->
-                <div id="apiKeySection" class="auth-section" style="display: none;">
+                <div id="apiKeySection" class="auth-section">
                     <h3>Bedrock API Key</h3>
                     <div class="form-group">
                         <label for="apiKey">API Key:</label>

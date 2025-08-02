@@ -389,14 +389,7 @@ class BedrockClient {
     if (error.message.includes('401')) {
       return new Error('API Key가 유효하지 않습니다. 설정을 확인해주세요.');
     } else if (error.message.includes('403')) {
-      // 현재 인증 방식 확인
-      const authType = this.authManager?.authType;
-      
-      if (authType === 'aws-cli') {
-        return new Error('AWS CLI 인증 실패: AWS Signature V4 구현이 완전하지 않습니다. 안정적인 사용을 위해 "API Key 인증" 방식을 사용해주세요.');
-      } else {
-        return new Error('API 접근 권한이 없습니다. IAM 권한을 확인해주세요.');
-      }
+      return new Error('API 접근 권한이 없습니다. API Key 권한을 확인해주세요.');
     } else if (error.message.includes('429')) {
       return new Error('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
     } else if (error.message.includes('500')) {
