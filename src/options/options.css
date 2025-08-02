@@ -331,37 +331,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     border: 1px solid rgba(66, 153, 225, 0.3);
 }
 
-/* 통계 그리드 */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.stat-item {
-    background: rgba(255, 255, 255, 0.05);
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    text-align: center;
-}
-
-.stat-label {
-    display: block;
-    color: #a0a9b8;
-    font-size: 12px;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.stat-value {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #667eea;
-}
-
 /* 도움말 섹션 */
 .help-content details {
     margin-bottom: 15px;
@@ -566,10 +535,6 @@ select:focus {
     
     .button-group {
         flex-direction: column;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr;
     }
 }
 

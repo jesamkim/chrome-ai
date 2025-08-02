@@ -29,13 +29,7 @@ const elements = {
     temperature: document.getElementById('temperature'),
     temperatureValue: document.getElementById('temperatureValue'),
     autoAnalyze: document.getElementById('autoAnalyze'),
-    saveSettings: document.getElementById('saveSettings'),
-    
-    totalChats: document.getElementById('totalChats'),
-    totalTokens: document.getElementById('totalTokens'),
-    analyzedPages: document.getElementById('analyzedPages'),
-    lastUsed: document.getElementById('lastUsed'),
-    resetStats: document.getElementById('resetStats')
+    saveSettings: document.getElementById('saveSettings')
 };
 
 // 초기화
@@ -48,8 +42,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadSettings();
     await loadSupportedModels();
     await loadCurrentModel();
-    await loadStatistics();
-    
     // 현재 인증 상태 확인
     await checkAuthStatus();
     
@@ -122,9 +114,6 @@ function setupEventListeners() {
     // 설정 관련
     elements.temperature.addEventListener('input', updateTemperatureDisplay);
     elements.saveSettings.addEventListener('click', saveSettings);
-    
-    // 통계 관련
-    elements.resetStats.addEventListener('click', resetStatistics);
     
     // 실시간 유효성 검사
     elements.apiKey?.addEventListener('input', validateApiKey);
@@ -300,30 +289,6 @@ async function loadSettings() {
 }
 
 /**
- * 통계 로드
- */
-async function loadStatistics() {
-    try {
-        const stats = await chrome.storage.local.get([
-            'totalChats',
-            'totalTokens',
-            'analyzedPages',
-            'lastUsed'
-        ]);
-        
-        elements.totalChats.textContent = stats.totalChats || 0;
-        elements.totalTokens.textContent = (stats.totalTokens || 0).toLocaleString();
-        elements.analyzedPages.textContent = stats.analyzedPages || 0;
-        elements.lastUsed.textContent = stats.lastUsed ? 
-            new Date(stats.lastUsed).toLocaleString('ko-KR') : '없음';
-        
-        console.log('✅ 통계 로드 완료');
-    } catch (error) {
-        console.error('❌ 통계 로드 실패:', error);
-    }
-}
-
-/**
  * API Key 가시성 토글
  */
 function toggleApiKeyVisibility() {
@@ -491,37 +456,6 @@ async function saveSettings() {
     } catch (error) {
         console.error('❌ 설정 저장 실패:', error);
         showStatus('설정 저장 중 오류가 발생했습니다.', 'error');
-    }
-}
-
-/**
- * 통계 초기화
- */
-async function resetStatistics() {
-    if (!confirm('정말로 모든 사용 통계를 초기화하시겠습니까?')) {
-        return;
-    }
-    
-    try {
-        await chrome.storage.local.remove([
-            'totalChats',
-            'totalTokens',
-            'analyzedPages',
-            'lastUsed'
-        ]);
-        
-        // UI 업데이트
-        elements.totalChats.textContent = '0';
-        elements.totalTokens.textContent = '0';
-        elements.analyzedPages.textContent = '0';
-        elements.lastUsed.textContent = '없음';
-        
-        showStatus('✅ 사용 통계가 초기화되었습니다.', 'success');
-        console.log('✅ 통계 초기화 완료');
-        
-    } catch (error) {
-        console.error('❌ 통계 초기화 실패:', error);
-        showStatus('통계 초기화 중 오류가 발생했습니다.', 'error');
     }
 }
 
