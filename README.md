@@ -14,7 +14,7 @@ Amazon Bedrock 기반 웹페이지 분석 AI 어시스턴트 Chrome Extension
 - **지능형 웹페이지 분석**: 현재 페이지 내용을 자동으로 분석하여 핵심 정보 추출
 - **실시간 AI 채팅**: 페이지 내용을 바탕으로 AI와 자연스러운 대화
 - **빠른 작업 도구**: 요약, 핵심 포인트 추출, 번역 등 원클릭 실행
-- **다크 테마 UI**: 현대적이고 직관적인 사용자 인터페이스
+
 
 ## 📋 설치 방법
 
@@ -37,7 +37,7 @@ npm install
 
 ### 4. API Key 설정
 1. Extension 아이콘 클릭
-2. 설정 페이지에서 AWS Bedrock API Key 입력 (AWS access key 입력 방식보다 이 방식을 권장)
+2. 설정 페이지에서 [AWS Bedrock API Key](https://docs.aws.amazon.com/ko_kr/bedrock/latest/userguide/api-keys-generate.html) 입력
 3. 원하는 AI 모델 선택
 
 ## 🎯 사용 예시
