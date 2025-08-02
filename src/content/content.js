@@ -125,124 +125,67 @@ async function handleMessage(request, sender, sendResponse) {
 }
 
 /**
- * 페이지 내용 추출 처리 (향상된 버전)
+ * 페이지 내용 추출 처리 (기본 방식)
  */
 async function handleExtractPageContent(sendResponse) {
     try {
-        console.log('🔍 향상된 페이지 내용 추출 시작');
+        console.log('🔍 페이지 내용 추출 시작');
         
-        // 향상된 텍스트 추출기 사용
-        const extractor = new EnhancedTextExtractor();
-        const extractedData = extractor.extractFullPageText();
+        // 기본 텍스트 추출
+        const title = document.title || '';
+        const url = window.location.href;
+        const domain = window.location.hostname;
         
-        // 텍스트 청킹
-        const chunks = extractor.chunkText(extractedData.fullText, 1000, 100);
+        // 페이지 본문 텍스트 추출
+        const bodyText = document.body ? document.body.innerText : '';
+        const limitedText = bodyText.slice(0, 8000); // 8KB 제한
         
-        // 요약 생성 (전체 텍스트 기반)
-        const summary = this.generateComprehensiveSummary(extractedData);
+        // 기본 구조화된 내용 생성
+        const content = `페이지 제목: ${title}\nURL: ${url}\n도메인: ${domain}\n\n내용:\n${limitedText}`;
         
-        console.log('✅ 향상된 페이지 내용 추출 완료:', {
-            totalLength: extractedData.fullText.length,
-            chunkCount: chunks.length,
-            wordCount: extractedData.statistics.wordCount
+        console.log('✅ 페이지 내용 추출 완료:', {
+            title: title,
+            textLength: limitedText.length,
+            domain: domain
         });
         
         sendResponse({
             success: true,
-            content: summary,
+            content: content,
             fullData: {
-                metadata: extractedData.metadata,
-                fullText: extractedData.fullText,
-                chunks: chunks,
-                statistics: extractedData.statistics,
-                structuredContent: extractedData.content
+                metadata: {
+                    title: title,
+                    url: url,
+                    domain: domain
+                },
+                fullText: limitedText,
+                chunks: [{ 
+                    id: 0, 
+                    content: limitedText, 
+                    length: limitedText.length 
+                }],
+                statistics: {
+                    wordCount: limitedText.split(/\s+/).length,
+                    charCount: limitedText.length
+                }
             },
             metadata: {
-                url: window.location.href,
-                title: document.title,
-                domain: window.location.hostname,
+                url: url,
+                title: title,
+                domain: domain,
                 timestamp: new Date().toISOString(),
-                extractionMethod: 'enhanced'
+                extractionMethod: 'basic'
             }
         });
         
     } catch (error) {
-        console.error('❌ 향상된 페이지 내용 추출 실패:', error);
-        
-        // 폴백: 기본 방식 사용
-        try {
-            const basicText = document.body ? document.body.innerText.slice(0, 8000) : '';
-            sendResponse({
-                success: true,
-                content: `페이지 제목: ${document.title}\nURL: ${window.location.href}\n\n내용:\n${basicText}`,
-                fullData: {
-                    fullText: basicText,
-                    chunks: [{ id: 0, content: basicText, length: basicText.length }]
-                },
-                metadata: {
-                    url: window.location.href,
-                    title: document.title,
-                    domain: window.location.hostname,
-                    timestamp: new Date().toISOString(),
-                    extractionMethod: 'fallback'
-                }
-            });
-        } catch (fallbackError) {
-            sendResponse({
-                success: false,
-                error: error.message,
-                fallback: {
-                    title: document.title,
-                    url: window.location.href,
-                    domain: window.location.hostname
-                }
-            });
-        }
-    }
-}
-
-/**
- * 포괄적인 요약 생성
- */
-function generateComprehensiveSummary(extractedData) {
-    const { metadata, content, fullText, statistics } = extractedData;
-    
-    let summary = '';
-    
-    // 기본 정보
-    summary += `페이지 제목: ${metadata.title}\n`;
-    summary += `URL: ${metadata.url}\n`;
-    summary += `도메인: ${metadata.domain}\n`;
-    
-    if (metadata.description) {
-        summary += `설명: ${metadata.description}\n`;
-    }
-    
-    summary += `\n통계:\n`;
-    summary += `- 총 글자 수: ${statistics.characterCount.toLocaleString()}자\n`;
-    summary += `- 단어 수: ${statistics.wordCount.toLocaleString()}개\n`;
-    summary += `- 문장 수: ${statistics.sentenceCount.toLocaleString()}개\n`;
-    summary += `- 단락 수: ${statistics.paragraphCount.toLocaleString()}개\n\n`;
-    
-    // 구조 정보
-    if (content.headings.length > 0) {
-        summary += `페이지 구조 (${content.headings.length}개 제목):\n`;
-        content.headings.forEach(h => {
-            summary += `${'#'.repeat(h.level)} ${h.text}\n`;
+        console.error('❌ 페이지 내용 추출 실패:', error);
+        sendResponse({ 
+            success: false, 
+            error: error.message,
+            content: `페이지 제목: ${document.title}\nURL: ${window.location.href}\n\n오류로 인해 내용을 추출할 수 없습니다.`
         });
-        summary += '\n';
     }
-    
-    // 전체 텍스트 내용 (처음 6000자)
-    summary += '전체 페이지 내용:\n';
-    summary += fullText.substring(0, 6000);
-    
-    if (fullText.length > 6000) {
-        summary += `\n\n... (총 ${fullText.length.toLocaleString()}자 중 처음 6,000자 표시)\n`;
-        summary += `전체 내용은 ${Math.ceil(fullText.length / 1000)}개 청크로 분할되어 저장됨`;
-    }
-    
-    return summary;
 }
 
 /**
