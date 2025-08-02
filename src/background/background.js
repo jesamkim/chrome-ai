@@ -70,35 +70,47 @@ async function initializeBedrockClient() {
 }
 
 /**
- * 컨텍스트 메뉴 생성
+ * 컨텍스트 메뉴 생성 (권한이 있는 경우에만)
  */
 function createContextMenus() {
-  chrome.contextMenus.create({
-    id: 'analyze-selection',
-    title: 'Claude로 선택 텍스트 분석',
-    contexts: ['selection']
-  });
+  if (chrome.contextMenus) {
+    try {
+      chrome.contextMenus.create({
+        id: 'analyze-selection',
+        title: 'Claude로 선택 텍스트 분석',
+        contexts: ['selection']
+      });
 
-  chrome.contextMenus.create({
-    id: 'analyze-page',
-    title: 'Claude로 페이지 분석',
-    contexts: ['page']
-  });
+      chrome.contextMenus.create({
+        id: 'analyze-page',
+        title: 'Claude로 페이지 분석',
+        contexts: ['page']
+      });
+
+      console.log('📋 컨텍스트 메뉴 생성 완료');
+    } catch (error) {
+      console.warn('⚠️ 컨텍스트 메뉴 생성 실패:', error.message);
+    }
+  } else {
+    console.warn('⚠️ contextMenus API를 사용할 수 없습니다. manifest.json에 권한을 추가하세요.');
+  }
 }
 
 /**
- * 컨텍스트 메뉴 클릭 처리
+ * 컨텍스트 메뉴 클릭 처리 (권한이 있는 경우에만)
  */
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  switch (info.menuItemId) {
-    case 'analyze-selection':
-      await handleTextAnalysis(info.selectionText, tab);
-      break;
-    case 'analyze-page':
-      await handlePageAnalysis(tab);
-      break;
-  }
-});
+if (chrome.contextMenus && chrome.contextMenus.onClicked) {
+  chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+    switch (info.menuItemId) {
+      case 'analyze-selection':
+        await handleTextAnalysis(info.selectionText, tab);
+        break;
+      case 'analyze-page':
+        await handlePageAnalysis(tab);
+        break;
+    }
+  });
+}
 
 /**
  * 메시지 처리 (Popup, Content Script와 통신)
