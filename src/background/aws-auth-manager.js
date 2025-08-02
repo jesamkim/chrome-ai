@@ -21,15 +21,35 @@ class AWSAuthManager {
             // 1순위: AWS CLI 인증 확인
             const awsCliAuth = await this.checkAWSCLIAuth();
             if (awsCliAuth.available) {
-                this.authType = 'aws-cli';
-                this.credentials = awsCliAuth.credentials;
-                this.region = awsCliAuth.region;
-                console.log('✅ AWS CLI 인증 사용:', {
-                    region: this.region,
-                    profile: awsCliAuth.profile || 'default'
-                });
-                this.isInitialized = true;
-                return true;
+                // 로컬 AWS CLI 사용 시 실제 인증 정보가 없으면 API Key로 폴백
+                if (awsCliAuth.credentials.useLocalCLI) {
+                    console.log('🔍 로컬 AWS CLI 설정 확인됨, API Key 폴백 확인 중...');
+                    
+                    // API Key가 있는지 확인
+                    const apiKeyAuth = await this.checkAPIKeyAuth();
+                    if (apiKeyAuth.available) {
+                        console.log('✅ 로컬 AWS CLI + API Key 조합 사용');
+                        this.authType = 'api-key';
+                        this.credentials = apiKeyAuth.credentials;
+                        this.isInitialized = true;
+                        return true;
+                    } else {
+                        console.warn('⚠️ 로컬 AWS CLI 선택되었지만 API Key가 필요합니다');
+                        this.isInitialized = false;
+                        return false;
+                    }
+                } else {
+                    // 저장된 AWS CLI 인증 정보 사용
+                    this.authType = 'aws-cli';
+                    this.credentials = awsCliAuth.credentials;
+                    this.region = awsCliAuth.region;
+                    console.log('✅ AWS CLI 인증 사용:', {
+                        region: this.region,
+                        profile: awsCliAuth.profile || 'default'
+                    });
+                    this.isInitialized = true;
+                    return true;
+                }
             }
 
             // 2순위: API Key 인증 확인

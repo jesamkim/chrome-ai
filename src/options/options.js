@@ -16,6 +16,8 @@ const elements = {
     // 로컬 AWS CLI 요소들
     currentProfile: document.getElementById('currentProfile'),
     awsProfile: document.getElementById('awsProfile'),
+    localCliApiKey: document.getElementById('localCliApiKey'),
+    toggleLocalCliApiKey: document.getElementById('toggleLocalCliApiKey'),
     
     // AWS CLI 인증 요소들
     awsAccessKeyId: document.getElementById('awsAccessKeyId'),
@@ -120,6 +122,14 @@ function setupPasswordToggleListeners() {
         const isPassword = input.type === 'password';
         input.type = isPassword ? 'text' : 'password';
         elements.toggleApiKey.textContent = isPassword ? '🙈' : '👁️';
+    });
+
+    // 로컬 CLI API Key 토글
+    elements.toggleLocalCliApiKey?.addEventListener('click', () => {
+        const input = elements.localCliApiKey;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        elements.toggleLocalCliApiKey.textContent = isPassword ? '🙈' : '👁️';
     });
 
     // Secret Access Key 토글
@@ -485,6 +495,12 @@ async function loadSettings() {
             if (elements.currentProfile) {
                 elements.currentProfile.textContent = settings.awsProfile || 'default';
             }
+            
+            // 로컬 CLI용 API Key 설정 (마스킹하여 표시)
+            if (settings.bedrockApiKey && elements.localCliApiKey) {
+                elements.localCliApiKey.value = maskApiKey(settings.bedrockApiKey);
+                elements.localCliApiKey.dataset.originalValue = settings.bedrockApiKey;
+            }
         } else if (awsCliSettings.aws_access_key_id) {
             // AWS CLI 인증 정보 입력 방식
             elements.authAWSCLI.checked = true;
@@ -699,20 +715,34 @@ async function saveApiKey() {
  */
 async function saveLocalAWSCLISettings() {
     const profile = elements.awsProfile?.value.trim() || 'default';
+    const apiKey = elements.localCliApiKey?.dataset.originalValue || elements.localCliApiKey?.value.trim();
+    
+    if (!apiKey || apiKey.includes('*')) {
+        showStatus('로컬 AWS CLI 사용을 위해 API Key를 입력해주세요.', 'error');
+        return;
+    }
     
     await chrome.storage.sync.set({ 
         useLocalAWSCLI: true,
-        awsProfile: profile
+        awsProfile: profile,
+        bedrockApiKey: apiKey  // API Key도 함께 저장
     });
     
     // 다른 인증 방식 설정 제거
-    await chrome.storage.sync.remove(['bedrockApiKey']);
     await chrome.storage.local.remove([
         'aws_access_key_id',
         'aws_secret_access_key',
         'aws_session_token',
         'aws_region'
     ]);
+    
+    // API Key 마스킹하여 표시
+    if (elements.localCliApiKey) {
+        elements.localCliApiKey.value = maskApiKey(apiKey);
+        elements.localCliApiKey.dataset.originalValue = apiKey;
+        elements.localCliApiKey.type = 'password';
+        elements.toggleLocalCliApiKey.textContent = '👁️';
+    }
     
     showStatus('✅ 로컬 AWS CLI 설정이 저장되었습니다.', 'success');
 }

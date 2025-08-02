@@ -87,27 +87,31 @@ input[type="number"],
 select {
     width: 100%;
     padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);  /* 배경을 더 밝게 */
+    border: 2px solid rgba(255, 255, 255, 0.3);  /* 테두리를 더 밝게 */
     border-radius: 8px;
-    color: #ffffff;  /* 입력 텍스트를 더 밝게 */
+    color: #ffffff;  /* 입력 텍스트를 밝은 흰색으로 */
     font-size: 14px;
+    font-weight: 500;  /* 폰트 굵기 추가 */
     transition: all 0.3s ease;
 }
 
 input[type="text"]:focus,
 input[type="password"]:focus,
-input[type="text"]::placeholder,
-input[type="password"]::placeholder,
-input[type="number"]::placeholder {
-    color: #a0a9b8;
-    opacity: 0.8;
-}
-
 input[type="number"]:focus,
 select:focus {
     outline: none;
     border-color: #667eea;
+    background: rgba(255, 255, 255, 0.2);  /* 포커스 시 더 밝은 배경 */
+    color: #ffffff;  /* 포커스 시에도 밝은 텍스트 */
+}
+
+input[type="text"]::placeholder,
+input[type="password"]::placeholder,
+input[type="number"]::placeholder {
+    color: #b0b7c3;  /* placeholder를 더 밝게 */
+    opacity: 0.9;
+}
     background: rgba(255, 255, 255, 0.15);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
@@ -586,3 +590,60 @@ select:focus {
 .settings-section:nth-child(3) { animation-delay: 0.2s; }
 .settings-section:nth-child(4) { animation-delay: 0.3s; }
 .settings-section:nth-child(5) { animation-delay: 0.4s; }
+
+/* 정보 박스 스타일 */
+.info-box {
+    background: rgba(102, 126, 234, 0.15);  /* 파란색 배경 */
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 12px 0;
+}
+
+.info-box p {
+    color: #ffffff;  /* 밝은 흰색 텍스트 */
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 8px 0;
+}
+
+.info-box code {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffd700;  /* 금색 코드 텍스트 */
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* 인증 섹션 스타일 개선 */
+.auth-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.auth-section h3 {
+    color: #ffffff;
+    font-size: 18px;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+/* 폼 그룹 라벨 개선 */
+.form-group label {
+    color: #ffffff;  /* 라벨을 밝은 흰색으로 */
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.form-group small {
+    color: #b0b7c3;  /* 작은 텍스트를 더 밝게 */
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
