@@ -35,9 +35,7 @@ const elements = {
     totalTokens: document.getElementById('totalTokens'),
     analyzedPages: document.getElementById('analyzedPages'),
     lastUsed: document.getElementById('lastUsed'),
-    resetStats: document.getElementById('resetStats'),
-    
-    apiKeyHelp: document.getElementById('apiKeyHelp')
+    resetStats: document.getElementById('resetStats')
 };
 
 // 초기화
@@ -236,7 +234,6 @@ function setupEventListeners() {
     elements.toggleApiKey.addEventListener('click', toggleApiKeyVisibility);
     elements.testConnection.addEventListener('click', testConnection);
     elements.saveApiKey.addEventListener('click', saveApiKey);
-    elements.apiKeyHelp.addEventListener('click', showApiKeyHelp);
     
     // 모델 관련
     elements.modelSelect.addEventListener('change', onModelSelectChange);
@@ -707,31 +704,6 @@ async function resetStatistics() {
         console.error('❌ 통계 초기화 실패:', error);
         showStatus('통계 초기화 중 오류가 발생했습니다.', 'error');
     }
-}
-
-/**
- * API Key 도움말 표시
- */
-function showApiKeyHelp(event) {
-    event.preventDefault();
-    
-    const helpText = `
-AWS Bedrock API Key 발급 방법:
-
-1. AWS 콘솔(https://console.aws.amazon.com)에 로그인
-2. Bedrock 서비스로 이동
-3. 좌측 메뉴에서 "API Keys" 선택
-4. "Create API Key" 버튼 클릭
-5. 키 이름과 권한 설정 후 생성
-6. 생성된 API Key를 복사하여 입력란에 붙여넣기
-
-주의사항:
-- API Key는 생성 시에만 확인 가능합니다
-- 안전한 곳에 보관하고 타인과 공유하지 마세요
-- 정기적으로 키를 교체하는 것을 권장합니다
-    `;
-    
-    alert(helpText);
 }
 
 /**

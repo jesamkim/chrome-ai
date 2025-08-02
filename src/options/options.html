@@ -30,6 +30,24 @@
                 <!-- API Key 인증 설정 -->
                 <div id="apiKeySection" class="auth-section">
                     <h3>Bedrock API Key</h3>
+                    
+                    <div class="info-box" style="background-color: #e8f4fd; border: 1px solid #bee5eb; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                        <p>🔑 <strong>API Key 발급 방법:</strong></p>
+                        <p>AWS Bedrock API Key를 발급받으려면 아래 링크를 참조하세요:</p>
+                        <p>
+                            <a href="https://docs.aws.amazon.com/ko_kr/bedrock/latest/userguide/api-keys-generate.html" 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               style="color: #0066cc; text-decoration: none; font-weight: bold;">
+                                📖 AWS Bedrock API Key 생성 가이드
+                            </a>
+                            <span style="font-size: 12px; color: #666; margin-left: 8px;">(새 창에서 열림)</span>
+                        </p>
+                        <p style="font-size: 14px; color: #555; margin-top: 8px;">
+                            💡 <strong>참고:</strong> API Key 생성 후 안전한 곳에 보관하고, 이 Extension에서만 사용하세요.
+                        </p>
+                    </div>
+                    
                     <div class="form-group">
                         <label for="apiKey">API Key:</label>
                         <div class="input-group">
@@ -37,8 +55,7 @@
                             <button type="button" id="toggleApiKey" class="toggle-btn">👁️</button>
                         </div>
                         <small class="help-text">
-                            AWS Bedrock에서 발급받은 API Key를 입력하세요. 
-                            <a href="#" id="apiKeyHelp">API Key 발급 방법 보기</a>
+                            위 가이드를 참조하여 AWS Bedrock에서 발급받은 API Key를 입력하세요.
                         </small>
                     </div>
                 </div>
