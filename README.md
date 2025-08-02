@@ -1,6 +1,6 @@
 # Claude AI Chrome Extension
 
-AWS Bedrock Claude 3.7 Sonnet 기반 웹페이지 분석 AI 어시스턴트 Chrome Extension
+AWS Bedrock 기반 웹페이지 분석 AI 어시스턴트 Chrome Extension
 
 ## 🚀 주요 기능
 
@@ -14,8 +14,8 @@ AWS Bedrock Claude 3.7 Sonnet 기반 웹페이지 분석 AI 어시스턴트 Chro
 
 ### 1. 저장소 클론
 ```bash
-git clone https://github.com/jesamkim/chrome-bedrock-chat.git
-cd chrome-bedrock-chat
+git clone https://github.com/jesamkim/chrome-ai.git
+cd chrome-ai
 ```
 
 ### 2. 의존성 설치
@@ -77,7 +77,7 @@ python3 -m http.server 8080
 ## 📁 프로젝트 구조
 
 ```
-chrome-bedrock-chat/
+chrome-ai/
 ├── src/
 │   ├── background/          # Service Worker
 │   │   ├── background.js
@@ -108,14 +108,6 @@ chrome-bedrock-chat/
 - **CORS 설정**: 적절한 호스트 권한 설정
 - **데이터 보호**: 클라이언트 사이드 노출 방지
 
-## 🧪 테스트 결과
-
-```
-✅ 단위 테스트: 17/17 통과
-✅ 통합 테스트: 17/19 통과 (API 제한으로 2개 실패)
-✅ 구조 검증: 11/11 통과
-✅ 총 성공률: 94.7% (36/38)
-```
 
 ## 📖 사용 예시
 
@@ -138,21 +130,10 @@ chrome-bedrock-chat/
 
 프로젝트에 포함된 `demo.html` 파일을 브라우저에서 열어 모든 기능을 테스트할 수 있습니다.
 
-## 🤝 기여하기
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ## 📝 라이선스
 
 이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 `LICENSE` 파일을 참조하세요.
-
-## 📞 문의
-
-프로젝트 관련 문의사항이 있으시면 GitHub Issues를 통해 연락해 주세요.
 
 ---
 
