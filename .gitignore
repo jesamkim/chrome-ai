@@ -85,3 +85,17 @@ venv.bak/
 
 # Lock files (keep package-lock.json for consistency)
 # yarn.lock
+
+# Development and documentation files (not needed for production)
+development-*.md
+test-setup.md
+create-icons.py
+docs/
+scripts/
+push-to-github.sh
+push-commands.txt
+venv/
+
+# Development logs and plans
+development-log.md
+development-plan.md
