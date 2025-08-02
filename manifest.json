@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Claude 3.7 AI Assistant",
+  "name": "AWS AI Assistant",
   "version": "1.0.0",
-  "description": "AWS Bedrock Claude 3.7 Sonnet 기반 웹페이지 분석 AI 어시스턴트",
+  "description": "Amazon Bedrock 기반 웹페이지 분석 AI 어시스턴트",
   
   "permissions": [
     "activeTab",
@@ -27,7 +27,7 @@
   
   "action": {
     "default_popup": "src/popup/popup.html",
-    "default_title": "Claude AI Assistant"
+    "default_title": "AWS AI Assistant"
   },
   
   "options_page": "src/options/options.html",

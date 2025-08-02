@@ -1,12 +1,12 @@
-# Claude AI Chrome Extension
+# AWS AI Assistant Chrome Extension
 
-AWS Bedrock 기반 웹페이지 분석 AI 어시스턴트 Chrome Extension
+Amazon Bedrock 기반 웹페이지 분석 AI 어시스턴트 Chrome Extension
 
 ## 🚀 주요 기능
 
 - **다중 AI 모델 지원**: Claude 3.7 Sonnet, Claude 4 Sonnet, Amazon Nova Pro, Nova Lite
 - **지능형 웹페이지 분석**: 현재 페이지 내용을 자동으로 분석하여 핵심 정보 추출
-- **실시간 AI 채팅**: 페이지 내용을 바탕으로 Claude와 자연스러운 대화
+- **실시간 AI 채팅**: 페이지 내용을 바탕으로 AI와 자연스러운 대화
 - **빠른 작업 도구**: 요약, 핵심 포인트 추출, 번역 등 원클릭 실행
 - **다크 테마 UI**: 현대적이고 직관적인 사용자 인터페이스
 
@@ -137,4 +137,4 @@ chrome-ai/
 
 ---
 
-**Made with ❤️ using AWS Bedrock and Claude AI**
+**Made with ❤️ using Amazon Bedrock AI**

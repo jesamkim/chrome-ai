@@ -1,7 +1,7 @@
 {
-  "name": "claude-ai-chrome-extension",
+  "name": "aws-ai-assistant-chrome-extension",
   "version": "1.0.0",
-  "description": "AWS Bedrock Claude 3.7 Sonnet 기반 Chrome Extension",
+  "description": "Amazon Bedrock 기반 Chrome Extension",
   "main": "src/background/background.js",
   "scripts": {
     "test": "jest",
