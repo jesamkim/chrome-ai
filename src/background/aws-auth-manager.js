@@ -37,6 +37,7 @@ class AWSAuthManager {
             if (apiKeyAuth.available) {
                 this.authType = 'api-key';
                 this.credentials = apiKeyAuth.credentials;
+                this.region = 'us-west-2'; // API Key 인증 시 기본 리전
                 console.log('✅ API Key 인증 사용');
                 this.isInitialized = true;
                 return true;

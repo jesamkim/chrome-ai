@@ -12,7 +12,7 @@ if (typeof AWSAuthManager === 'undefined' && typeof require !== 'undefined') {
 
 class BedrockClient {
   constructor() {
-    this.region = 'us-west-2'; // 고정 리전
+    this.region = 'us-west-2'; // 기본 리전
     this.baseUrl = `https://bedrock-runtime.${this.region}.amazonaws.com`;
     this.authManager = new AWSAuthManager();
     this.isInitialized = false;
@@ -53,11 +53,18 @@ class BedrockClient {
         throw new Error('AWS 인증이 설정되지 않았습니다. AWS CLI 설정 또는 API Key를 입력해주세요.');
       }
 
-      // 인증 정보 확인
+      // 인증 정보 확인 및 리전 설정
       const authInfo = this.authManager.getAuthInfo();
+      
+      // 저장된 리전 설정이 있으면 사용, 없으면 기본값 유지
+      if (authInfo.region) {
+        this.region = authInfo.region;
+        this.baseUrl = `https://bedrock-runtime.${this.region}.amazonaws.com`;
+      }
+      
       console.log('✅ AWS 인증 완료:', {
         type: authInfo.authType,
-        region: authInfo.region
+        region: this.region
       });
 
       // 선택된 모델 로드
