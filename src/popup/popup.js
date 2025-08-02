@@ -220,7 +220,7 @@ class PopupManager {
   async showChatScreen() {
     this.showScreen('chat');
     
-    // 페이지 컨텍스트가 없으면 추가
+    // 페이지 컨텍스트가 없으면 추가 및 인덱싱
     if (this.chatHistory.length === 0) {
       try {
         // 현재 활성 탭 가져오기
@@ -230,7 +230,10 @@ class PopupManager {
           // 페이지 내용 추출
           const pageContent = await this.extractPageContent(tab);
           
-          // 페이지 컨텍스트를 별도 저장 (system 메시지가 아닌 컨텍스트로)
+          // Vector Store에 페이지 인덱싱 (백그라운드에서 실행)
+          this.indexCurrentPage(tab, pageContent);
+          
+          // 기본 페이지 컨텍스트 설정 (Vector Store 검색 실패 시 폴백용)
           this.pageContext = `현재 사용자가 보고 있는 페이지 정보:
 ${pageContent}
 
@@ -247,6 +250,84 @@ ${pageContent}
     setTimeout(() => {
       this.chatInput?.focus();
     }, 100);
+  }
+
+  /**
+   * 현재 페이지를 Vector Store에 인덱싱
+   */
+  async indexCurrentPage(tab, pageContent) {
+    try {
+      console.log('📊 페이지 Vector Store 인덱싱 시작...');
+      
+      // 향상된 텍스트 추출 결과가 있는지 확인
+      const fullPageData = await this.getFullPageData(tab);
+      
+      if (!fullPageData || !fullPageData.fullData) {
+        console.warn('⚠️ 전체 페이지 데이터가 없어 인덱싱 건너뜀');
+        return;
+      }
+
+      // Background Script에 인덱싱 요청
+      const response = await chrome.runtime.sendMessage({
+        type: 'INDEX_PAGE',
+        data: fullPageData
+      });
+
+      if (response && response.success) {
+        console.log('✅ 페이지 인덱싱 완료:', response.result);
+        
+        // 사용자에게 알림 (선택적)
+        this.showIndexingComplete(response.result);
+      } else {
+        console.warn('⚠️ 페이지 인덱싱 실패:', response?.error);
+      }
+
+    } catch (error) {
+      console.warn('⚠️ 페이지 인덱싱 중 오류:', error.message);
+    }
+  }
+
+  /**
+   * 전체 페이지 데이터 가져오기
+   */
+  async getFullPageData(tab) {
+    try {
+      // Content Script에서 향상된 텍스트 추출 결과 가져오기
+      const contentResponse = await chrome.tabs.sendMessage(tab.id, {
+        type: 'EXTRACT_PAGE_CONTENT'
+      });
+
+      if (contentResponse && contentResponse.success && contentResponse.fullData) {
+        return {
+          fullData: contentResponse.fullData,
+          metadata: contentResponse.metadata
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.warn('⚠️ 전체 페이지 데이터 가져오기 실패:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 인덱싱 완료 알림 표시
+   */
+  showIndexingComplete(result) {
+    // 채팅 영역에 시스템 메시지 추가
+    const systemMessage = `📊 페이지 분석 완료: ${result.chunkCount}개 섹션으로 분할되어 의미 검색이 가능합니다.`;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message system';
+    messageDiv.innerHTML = `
+      <div class="message-content system-info">
+        ${systemMessage}
+      </div>
+    `;
+
+    this.chatMessages?.appendChild(messageDiv);
+    this.chatMessages?.scrollTo(0, this.chatMessages.scrollHeight);
   }
 
   showLoadingScreen(message = '처리 중...') {
@@ -397,6 +478,7 @@ ${pageContent}
             { role: 'user', content: message }
           ],
           systemPrompt: this.pageContext || '현재 페이지에 대한 질문에 답변해주세요.',
+          useVectorSearch: true, // Vector Store 검색 활성화
           sessionId: 'popup-session',
           options: {
             maxTokens: 2000
@@ -409,6 +491,15 @@ ${pageContent}
 
       if (response && response.success) {
         this.addMessageToChat('assistant', response.response);
+        
+        // Vector Store 사용 정보 표시 (디버그용)
+        if (response.vectorSearch && response.vectorSearch.used) {
+          console.log('🔍 Vector Store 검색 사용됨:', {
+            searchResults: response.vectorSearch.searchResults,
+            topSimilarity: response.vectorSearch.topSimilarity,
+            queryTokens: response.vectorSearch.queryTokens
+          });
+        }
       } else {
         this.addMessageToChat('assistant', `죄송합니다. 오류가 발생했습니다: ${response?.error || '알 수 없는 오류'}`);
       }

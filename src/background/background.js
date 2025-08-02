@@ -1,13 +1,15 @@
 /**
  * Chrome Extension Background Service Worker
- * Claude 3.7 Sonnet AI Assistant
+ * Claude 3.7 Sonnet AI Assistant with Vector Store
  */
 
-// Bedrock 클라이언트 import
+// Bedrock 클라이언트 및 Vector Store import
 importScripts('bedrock-client.js');
+importScripts('vector-store.js');
 
 // 전역 변수
 let bedrockClient = null;
+let vectorStore = null;
 let activeSessions = new Map();
 
 /**
@@ -73,10 +75,25 @@ async function initializeBedrockClient() {
     bedrockClient = new BedrockClient();
     await bedrockClient.initialize();
     console.log('✅ Bedrock 클라이언트 초기화 성공');
+    
+    // Vector Store 초기화
+    if (!vectorStore) {
+      vectorStore = new VectorStore(bedrockClient);
+      console.log('✅ Vector Store 초기화 완료');
+      
+      // 주기적 정리 작업 설정 (24시간마다)
+      setInterval(() => {
+        if (vectorStore) {
+          vectorStore.cleanup();
+        }
+      }, 24 * 60 * 60 * 1000);
+    }
+    
     return true;
   } catch (error) {
     console.warn('⚠️ Bedrock 클라이언트 초기화 실패:', error.message);
     bedrockClient = null;
+    vectorStore = null;
     return false;
   }
 }
@@ -145,6 +162,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     case 'ANALYZE_PAGE':
       handlePageAnalysisRequest(request.data, sendResponse);
+      break;
+    
+    case 'INDEX_PAGE':
+      handleIndexPageRequest(request.data, sendResponse);
+      break;
+    
+    case 'SEARCH_SIMILAR':
+      handleSearchSimilarRequest(request.data, sendResponse);
+      break;
+    
+    case 'VECTOR_STORE_INFO':
+      handleVectorStoreInfoRequest(sendResponse);
       break;
     
     case 'GET_SESSION':
@@ -232,7 +261,7 @@ async function handleChatMessage(data, sendResponse) {
       throw new Error('Bedrock 클라이언트가 초기화되지 않았습니다. API Key를 설정해주세요.');
     }
 
-    const { messages, systemPrompt, sessionId, options = {} } = data;
+    const { messages, systemPrompt, sessionId, options = {}, useVectorSearch = true } = data;
     
     if (!messages || !Array.isArray(messages)) {
       throw new Error('유효하지 않은 메시지 형식입니다.');
@@ -250,10 +279,55 @@ async function handleChatMessage(data, sendResponse) {
 
     console.log('💬 채팅 메시지 처리 시작:', messages.length, '개 메시지');
 
-    // Claude 호출 (systemPrompt 포함)
+    let finalSystemPrompt = systemPrompt;
+    let contextInfo = null;
+
+    // Vector Store 기반 검색 (활성화된 경우)
+    if (useVectorSearch && vectorStore && messages.length > 0) {
+      try {
+        const lastUserMessage = messages[messages.length - 1];
+        if (lastUserMessage.role === 'user') {
+          console.log('🔍 Vector Store 검색 시작:', lastUserMessage.content.substring(0, 50));
+          
+          const searchResult = await vectorStore.searchSimilar(lastUserMessage.content, {
+            topK: 3,
+            minSimilarity: 0.3,
+            includeMetadata: true
+          });
+
+          if (searchResult.results.length > 0) {
+            // 관련 컨텍스트 구성
+            const relevantContext = searchResult.results
+              .map(result => `[유사도: ${result.similarity}] ${result.content}`)
+              .join('\n\n');
+
+            finalSystemPrompt = `다음은 현재 페이지에서 사용자 질문과 관련된 내용입니다:
+
+${relevantContext}
+
+위 내용을 바탕으로 사용자의 질문에 정확하고 도움이 되는 답변을 해주세요. 관련 내용이 없다면 일반적인 답변을 제공해주세요.`;
+
+            contextInfo = {
+              searchResults: searchResult.results.length,
+              totalSearched: searchResult.totalSearched,
+              topSimilarity: searchResult.results[0]?.similarity || 0,
+              queryTokens: searchResult.queryTokens
+            };
+
+            console.log('✅ Vector Store 검색 완료:', contextInfo);
+          } else {
+            console.log('ℹ️ Vector Store에서 관련 내용을 찾지 못함, 기본 시스템 프롬프트 사용');
+          }
+        }
+      } catch (vectorError) {
+        console.warn('⚠️ Vector Store 검색 실패, 기본 방식으로 진행:', vectorError.message);
+      }
+    }
+
+    // Claude 호출
     const claudeOptions = {
       ...options,
-      systemPrompt: systemPrompt
+      systemPrompt: finalSystemPrompt
     };
     
     const response = await bedrockClient.invokeClaude(messages, claudeOptions);
@@ -275,7 +349,12 @@ async function handleChatMessage(data, sendResponse) {
       success: true,
       response: response.content[0].text,
       usage: response.usage,
-      sessionId: sessionId
+      sessionId: sessionId,
+      vectorSearch: contextInfo ? {
+        used: true,
+        ...contextInfo
+      } : { used: false },
+      timestamp: Date.now()
     });
 
   } catch (error) {
@@ -557,5 +636,99 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000); // 5분마다 실행
+
+/**
+ * 페이지 인덱싱 요청 처리
+ */
+async function handleIndexPageRequest(data, sendResponse) {
+  try {
+    console.log('📊 페이지 인덱싱 요청 받음');
+    
+    if (!vectorStore) {
+      throw new Error('Vector Store가 초기화되지 않았습니다.');
+    }
+    
+    if (!data || !data.fullData) {
+      throw new Error('페이지 데이터가 없습니다.');
+    }
+    
+    const result = await vectorStore.indexPage(data);
+    
+    sendResponse({
+      success: true,
+      result: result,
+      message: '페이지 인덱싱이 완료되었습니다.'
+    });
+    
+  } catch (error) {
+    console.error('❌ 페이지 인덱싱 실패:', error);
+    sendResponse({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
+/**
+ * 유사도 검색 요청 처리
+ */
+async function handleSearchSimilarRequest(data, sendResponse) {
+  try {
+    console.log('🔍 유사도 검색 요청 받음:', data.query?.substring(0, 50));
+    
+    if (!vectorStore) {
+      throw new Error('Vector Store가 초기화되지 않았습니다.');
+    }
+    
+    if (!data || !data.query) {
+      throw new Error('검색 쿼리가 없습니다.');
+    }
+    
+    const searchResult = await vectorStore.searchSimilar(data.query, data.options);
+    
+    sendResponse({
+      success: true,
+      searchResult: searchResult,
+      message: `${searchResult.results.length}개의 유사한 내용을 찾았습니다.`
+    });
+    
+  } catch (error) {
+    console.error('❌ 유사도 검색 실패:', error);
+    sendResponse({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Vector Store 정보 요청 처리
+ */
+async function handleVectorStoreInfoRequest(sendResponse) {
+  try {
+    if (!vectorStore) {
+      sendResponse({
+        success: false,
+        error: 'Vector Store가 초기화되지 않았습니다.'
+      });
+      return;
+    }
+    
+    const storageInfo = await vectorStore.getStorageInfo();
+    
+    sendResponse({
+      success: true,
+      storageInfo: storageInfo,
+      message: 'Vector Store 정보를 조회했습니다.'
+    });
+    
+  } catch (error) {
+    console.error('❌ Vector Store 정보 조회 실패:', error);
+    sendResponse({
+      success: false,
+      error: error.message
+    });
+  }
+}
 
 console.log('🎯 Background Service Worker 로드 완료');

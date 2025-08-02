@@ -69,8 +69,87 @@ class BedrockClient {
   }
 
   /**
-   * 지원 모델 목록 반환 (API Key 없이도 사용 가능)
+   * Titan Embeddings를 사용하여 텍스트를 벡터로 변환
    */
+  async generateEmbedding(text) {
+    if (!this.isInitialized) {
+      throw new Error('BedrockClient가 초기화되지 않았습니다.');
+    }
+
+    try {
+      console.log('🔢 임베딩 생성 시작:', text.substring(0, 100) + '...');
+      
+      const requestBody = {
+        inputText: text.substring(0, 8000) // Titan Embeddings 최대 입력 길이
+      };
+
+      const response = await fetch(`${this.baseUrl}/model/amazon.titan-embed-text-v2:0/invoke`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Titan Embeddings API 오류 (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.embedding || !Array.isArray(data.embedding)) {
+        throw new Error('임베딩 응답 형식이 올바르지 않습니다.');
+      }
+
+      console.log('✅ 임베딩 생성 완료:', {
+        inputLength: text.length,
+        embeddingDimensions: data.embedding.length
+      });
+
+      return {
+        embedding: data.embedding, // 1536차원 벡터
+        inputTokens: Math.ceil(text.length / 4), // 대략적인 토큰 수
+        model: 'amazon.titan-embed-text-v2:0'
+      };
+
+    } catch (error) {
+      console.error('❌ 임베딩 생성 실패:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 배치로 여러 텍스트의 임베딩 생성
+   */
+  async generateBatchEmbeddings(texts, batchSize = 5) {
+    const results = [];
+    
+    for (let i = 0; i < texts.length; i += batchSize) {
+      const batch = texts.slice(i, i + batchSize);
+      console.log(`🔢 배치 임베딩 생성: ${i + 1}-${Math.min(i + batchSize, texts.length)}/${texts.length}`);
+      
+      const batchPromises = batch.map(text => this.generateEmbedding(text));
+      
+      try {
+        const batchResults = await Promise.all(batchPromises);
+        results.push(...batchResults);
+        
+        // API 레이트 리밋 방지를 위한 지연
+        if (i + batchSize < texts.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+      } catch (error) {
+        console.error(`❌ 배치 ${i}-${i + batchSize} 임베딩 실패:`, error);
+        throw error;
+      }
+    }
+    
+    return results;
+  }
   getSupportedModels() {
     return Object.entries(this.supportedModels).map(([key, model]) => ({
       key: key,

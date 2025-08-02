@@ -559,3 +559,44 @@ body {
     opacity: 1;
   }
 }
+
+/* 시스템 메시지 스타일 */
+.message.system {
+  margin: 8px 0;
+  text-align: center;
+}
+
+.message.system .message-content {
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+  color: #1565c0;
+  border: 1px solid #bbdefb;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  display: inline-block;
+  max-width: none;
+}
+
+.message.system .system-info {
+  background: linear-gradient(135deg, #e8f5e8, #f0f8ff);
+  color: #2e7d32;
+  border-color: #c8e6c9;
+}
+
+/* Vector Store 상태 표시 */
+.vector-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.vector-status.active {
+  color: #4caf50;
+}
+
+.vector-status.inactive {
+  color: #ff9800;
+}
