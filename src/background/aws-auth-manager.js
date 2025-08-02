@@ -203,18 +203,24 @@ class AWSAuthManager {
      */
     async generateAWSSignature(accessKeyId, secretAccessKey, timestamp, date) {
         try {
+            console.warn('⚠️ AWS Signature V4 미완성 구현');
+            console.warn('현재 AWS CLI 인증은 실험적 기능입니다.');
+            console.warn('안정적인 사용을 위해 API Key 인증을 권장합니다.');
+            
             // 실제 구현에서는 crypto-js나 AWS SDK의 서명 로직 사용
-            // 여기서는 간소화된 Bearer 토큰 방식으로 구현
+            // 여기서는 간소화된 임시 서명 사용 (실제 AWS API에서는 거부됨)
             
-            // 임시로 API Key 방식과 동일하게 처리
-            // 실제로는 AWS Signature V4 알고리즘 구현 필요
-            console.warn('⚠️ AWS Signature V4 구현 필요 - 임시로 Bearer 토큰 사용');
+            // 임시 서명 생성 (실제로는 작동하지 않음)
+            const temporarySignature = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${date}/us-west-2/bedrock/aws4_request, SignedHeaders=host;x-amz-date, Signature=temporary_signature_not_implemented`;
             
-            return `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${date}/us-west-2/bedrock/aws4_request, SignedHeaders=host;x-amz-date, Signature=temporary`;
+            console.error('❌ AWS Signature V4가 완전히 구현되지 않았습니다.');
+            console.error('이 서명은 AWS API에서 거부될 것입니다.');
+            
+            return temporarySignature;
 
         } catch (error) {
             console.error('❌ AWS 서명 생성 실패:', error);
-            throw error;
+            throw new Error('AWS Signature V4 구현이 완료되지 않았습니다. API Key 인증을 사용해주세요.');
         }
     }
 

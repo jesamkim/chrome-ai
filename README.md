@@ -37,7 +37,7 @@ npm install
 
 ### 4. API Key 설정
 1. Extension 아이콘 클릭
-2. 설정 페이지에서 AWS Bedrock API Key 입력
+2. 설정 페이지에서 AWS Bedrock API Key 입력 (AWS access key 입력 방식보다 이 방식을 권장)
 3. 원하는 AI 모델 선택
 
 ## 🎯 사용 예시
@@ -49,7 +49,7 @@ npm install
 - **전공 선언/변경**: 90학점 도달 전 선언 및 변경 절차 안내  
 - **선별 입학 프로그램**: 공학, 컴퓨터 과학, 특수교육 등 전공별 정보
 
-### 2. 빠른 작업 도구
+### 2. 빠른 원클릭 도구
 - **요약**: 페이지 내용을 간결하게 요약
 - **핵심 포인트**: 주요 포인트들을 불릿 형태로 정리
 - **번역**: 페이지 내용을 한국어로 번역
@@ -143,4 +143,4 @@ chrome-ai/
 
 ---
 
-**Made with ❤️ using Amazon Bedrock AI**
+**Made with ❤️ using Amazon Q Developer**
