@@ -24,9 +24,18 @@ global.AWSAuthManager = require('../../src/background/aws-auth-manager.js');
 
 const BedrockClient = require('../../src/background/bedrock-client.js');
 
+/**
+ * Nova 모델 응답 구조 디버깅 테스트
+ * 
+ * 보안 주의사항:
+ * - 실제 API Key는 환경변수 TEST_BEDROCK_API_KEY로 설정
+ * - 코드에 직접 API Key를 하드코딩하지 말 것
+ * - 테스트 실행 시: TEST_BEDROCK_API_KEY=your_key npm test
+ */
+
 describe('Nova 응답 구조 디버깅', () => {
   let client;
-  const TEST_API_KEY = 'ABSKamVzYW0yKzEtYXQtNjU4NDkyNTcwODMxOjArSzVZZTB4bU44S3J1akViUzVDUmVFYmJzQXVEbWRnd3lMT2M3NjNPWEltOGVORGxjMW55NXo4MFhnPQ==';
+  const TEST_API_KEY = process.env.TEST_BEDROCK_API_KEY || 'test-dummy-api-key-for-testing-only';
 
   beforeEach(async () => {
     client = new BedrockClient();

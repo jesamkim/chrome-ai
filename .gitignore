@@ -10,11 +10,16 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*
 
-# API Keys (보안)
+# API Keys (보안 - 절대 커밋하지 말 것)
 *.key
 *.pem
 config/secrets.json
+*api-key*
+*API_KEY*
+test-keys.js
+secrets.js
 
 # IDE
 .vscode/
