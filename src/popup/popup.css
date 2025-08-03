@@ -66,6 +66,15 @@ body {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.header-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 .header-actions {
