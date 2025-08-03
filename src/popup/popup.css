@@ -459,7 +459,7 @@ body {
   border-top: 1px solid var(--border);
   padding: var(--spacing-sm) var(--spacing-md);
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
 }
 
@@ -468,25 +468,6 @@ body {
   gap: var(--spacing-sm);
   font-size: 11px;
   color: var(--text-muted);
-}
-
-.footer-actions {
-  display: flex;
-  gap: var(--spacing-xs);
-}
-
-.footer-btn {
-  background: none;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-  padding: var(--spacing-xs);
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.footer-btn:hover {
-  background: var(--bg-tertiary);
 }
 
 /* 스크롤바 스타일 */
