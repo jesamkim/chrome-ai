@@ -24,19 +24,19 @@ class BedrockClient {
         name: 'Claude 3.7 Sonnet',
         provider: 'anthropic',
         maxTokens: 8000,
-        description: '균형잡힌 성능과 속도 (기본 모델)'
+        description: '균형잡힌 성능과 속도'
       },
       'claude-4-sonnet': {
-        id: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
+        id: 'global.anthropic.claude-sonnet-4-20250514-v1:0',
         name: 'Claude 4 Sonnet',
         provider: 'anthropic',
         maxTokens: 8000,
-        description: '최신 고성능 모델'
+        description: '최신 고성능 모델 (기본 모델)'
       }
     };
     
     // 기본 모델 설정
-    this.currentModel = 'claude-3.7-sonnet';
+    this.currentModel = 'claude-4-sonnet';
   }
 
   /**
@@ -69,12 +69,12 @@ class BedrockClient {
 
       // 선택된 모델 로드
       const result = await chrome.storage.sync.get(['selectedModel']);
-      this.currentModel = result.selectedModel || 'claude-3.7-sonnet';
+      this.currentModel = result.selectedModel || 'claude-4-sonnet';
       
       // 모델 유효성 검사
       if (!this.supportedModels[this.currentModel]) {
         console.warn(`⚠️ 지원하지 않는 모델: ${this.currentModel}, 기본 모델로 변경`);
-        this.currentModel = 'claude-3.7-sonnet';
+        this.currentModel = 'claude-4-sonnet';
         await chrome.storage.sync.set({ selectedModel: this.currentModel });
       }
 

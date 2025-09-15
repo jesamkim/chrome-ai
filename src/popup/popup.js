@@ -7,7 +7,7 @@ class PopupManager {
   constructor() {
     this.currentScreen = 'analysis';
     this.isConnected = false;
-    this.currentModel = 'claude-3.7-sonnet';
+    this.currentModel = 'claude-4-sonnet';
     this.chatHistory = [];
     this.isSending = false; // 메시지 전송 중 플래그
     
@@ -156,8 +156,8 @@ class PopupManager {
 
       if (response && response.success) {
         this.isConnected = true;
-        this.currentModel = response.model || 'claude-3.7-sonnet';
-        this.updateConnectionStatus(true, `${response.modelName || 'Claude 3.7 Sonnet'} 연결됨`);
+        this.currentModel = response.model || 'claude-4-sonnet';
+        this.updateConnectionStatus(true, `${response.modelName || 'Claude 4 Sonnet'} 연결됨`);
       } else {
         this.isConnected = false;
         this.updateConnectionStatus(false, response?.error || '연결 실패');

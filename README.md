@@ -10,7 +10,7 @@ Amazon Bedrock 기반 웹페이지 분석 AI 어시스턴트 Chrome Extension
 
 ## 🚀 주요 기능
 
-- **다중 AI 모델 지원**: Claude 3.7 Sonnet, Claude 4 Sonnet
+- **다중 AI 모델 지원**: Claude 4 Sonnet, Claude 3.7 Sonnet
 - **지능형 웹페이지 분석**: 현재 페이지 내용을 자동으로 분석하여 핵심 정보 추출
 - **실시간 AI 채팅**: 페이지 내용을 바탕으로 AI와 자연스러운 대화
 - **빠른 작업 도구**: 요약, 핵심 포인트 추출, 번역 등 원클릭 실행
@@ -84,7 +84,7 @@ python3 -m http.server 8080
 
 ## 📊 기술 스택
 
-- **AI 모델**: AWS Bedrock (Claude 3.7 Sonnet, Claude 4 Sonnet)
+- **AI 모델**: AWS Bedrock (Claude 4 Sonnet, Claude 3.7 Sonnet)
 - **플랫폼**: Chrome Extension Manifest V3
 - **인증**: Bearer Token (API Key 기반)
 - **리전**: us-west-2 (Cross-Region Inference)
@@ -94,8 +94,8 @@ python3 -m http.server 8080
 
 | 모델 | 제공자 | 특징 | 최대 토큰 |
 |------|--------|------|-----------|
-| Claude 3.7 Sonnet | Anthropic | 균형잡힌 성능과 속도 (기본) | 8,000 |
-| Claude 4 Sonnet | Anthropic | 최신 고성능 모델 | 8,000 |
+| Claude 4 Sonnet | Anthropic | 최신 고성능 모델 (기본) | 8,000 |
+| Claude 3.7 Sonnet | Anthropic | 균형잡힌 성능과 속도 | 8,000 |
 
 ## 📁 프로젝트 구조
 
