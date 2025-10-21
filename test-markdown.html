@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Rendering Test</title>
+    <link rel="stylesheet" href="src/popup/popup.css">
+    <style>
+        body {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .test-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--accent-primary);
+        }
+        .test-input {
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            color: var(--text-secondary);
+        }
+        .test-output {
+            background: var(--bg-secondary);
+            padding: 12px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="color: var(--text-primary); margin-bottom: 24px;">🧪 Markdown Rendering Test</h1>
+
+    <div class="test-section">
+        <div class="test-header">Test 1: Bold and Italic</div>
+        <div class="test-input">**굵은 글씨**와 *기울임*을 테스트합니다.</div>
+        <div class="test-output">
+            <div class="message assistant">
+                <div class="message-content" id="test1"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">Test 2: Inline Code</div>
+        <div class="test-input">이것은 `inline code` 예시입니다.</div>
+        <div class="test-output">
+            <div class="message assistant">
+                <div class="message-content" id="test2"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">Test 3: Code Block</div>
+        <div class="test-input">```
+function hello() {
+  console.log("Hello World!");
+}
+```</div>
+        <div class="test-output">
+            <div class="message assistant">
+                <div class="message-content" id="test3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">Test 4: Headings</div>
+        <div class="test-input"># 제목 1
+## 제목 2
+### 제목 3</div>
+        <div class="test-output">
+            <div class="message assistant">
+                <div class="message-content" id="test4"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">Test 5: Lists</div>
+        <div class="test-input">- 항목 1
+- 항목 2
+- 항목 3</div>
+        <div class="test-output">
+            <div class="message assistant">
+                <div class="message-content" id="test5"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">Test 6: Links</div>
+        <div class="test-input">[Google](https://www.google.com)로 이동하기</div>
+        <div class="test-output">
+            <div class="message assistant">
+                <div class="message-content" id="test6"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">Test 7: Blockquote</div>
+        <div class="test-input">> 이것은 인용구입니다.
+> 여러 줄로 작성할 수 있습니다.</div>
+        <div class="test-output">
+            <div class="message assistant">
+                <div class="message-content" id="test7"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-header">Test 8: Complex Example</div>
+        <div class="test-input">## 페이지 요약
+
+이 페이지는 **AWS Bedrock** 기반의 Chrome Extension에 대한 문서입니다.
+
+### 주요 기능
+
+- **AI 채팅**: Claude 모델과 대화
+- **페이지 분석**: 현재 페이지 내용 분석
+- **번역**: `translateBtn`을 사용하여 번역
+
+코드 예시:
+```javascript
+const result = await analyzeContent();
+console.log(result);
+```
+
+자세한 내용은 [GitHub](https://github.com)을 참고하세요.</div>
+        <div class="test-output">
+            <div class="message assistant">
+                <div class="message-content" id="test8"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 마크다운 텍스트를 HTML로 변환
+         */
+        function renderMarkdown(text) {
+            if (!text) return '';
+
+            // HTML 이스케이프 (XSS 방지)
+            let html = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            // 코드 블록 (```) - 먼저 처리하여 내부 마크다운 처리 방지
+            const codeBlocks = [];
+            html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
+                const index = codeBlocks.length;
+                codeBlocks.push(code.trim());
+                return `___CODE_BLOCK_${index}___`;
+            });
+
+            // 인라인 코드 (`)
+            const inlineCodes = [];
+            html = html.replace(/`([^`]+)`/g, (match, code) => {
+                const index = inlineCodes.length;
+                inlineCodes.push(code);
+                return `___INLINE_CODE_${index}___`;
+            });
+
+            // 굵은 글씨 (**text** or __text__)
+            html = html.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+
+            // 기울임 (*text* or _text_)
+            html = html.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+            html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+
+            // 링크 [text](url)
+            html = html.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+            // 헤딩 (# ## ###)
+            html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+            html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+            // 순서 없는 리스트 (- or * or +)
+            html = html.replace(/^[\-\*\+] (.+)$/gm, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+            // 순서 있는 리스트 (1. 2. 3.)
+            html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+            // 인용구 (>)
+            html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+
+            // 수평선 (--- or ***)
+            html = html.replace(/^(\-\-\-|\*\*\*)$/gm, '<hr>');
+
+            // 개행 처리
+            html = html.replace(/\n\n/g, '</p><p>');
+            html = html.replace(/\n/g, '<br>');
+
+            // 단락으로 감싸기
+            if (!html.startsWith('<')) {
+                html = '<p>' + html + '</p>';
+            }
+
+            // 코드 블록 복원
+            codeBlocks.forEach((code, index) => {
+                html = html.replace(
+                    `___CODE_BLOCK_${index}___`,
+                    `<pre><code>${code}</code></pre>`
+                );
+            });
+
+            // 인라인 코드 복원
+            inlineCodes.forEach((code, index) => {
+                html = html.replace(
+                    `___INLINE_CODE_${index}___`,
+                    `<code>${code}</code>`
+                );
+            });
+
+            return html;
+        }
+
+        // 테스트 실행
+        document.addEventListener('DOMContentLoaded', () => {
+            const tests = [
+                { id: 'test1', text: '**굵은 글씨**와 *기울임*을 테스트합니다.' },
+                { id: 'test2', text: '이것은 `inline code` 예시입니다.' },
+                { id: 'test3', text: '```\nfunction hello() {\n  console.log("Hello World!");\n}\n```' },
+                { id: 'test4', text: '# 제목 1\n## 제목 2\n### 제목 3' },
+                { id: 'test5', text: '- 항목 1\n- 항목 2\n- 항목 3' },
+                { id: 'test6', text: '[Google](https://www.google.com)로 이동하기' },
+                { id: 'test7', text: '> 이것은 인용구입니다.\n> 여러 줄로 작성할 수 있습니다.' },
+                { id: 'test8', text: '## 페이지 요약\n\n이 페이지는 **AWS Bedrock** 기반의 Chrome Extension에 대한 문서입니다.\n\n### 주요 기능\n\n- **AI 채팅**: Claude 모델과 대화\n- **페이지 분석**: 현재 페이지 내용 분석\n- **번역**: `translateBtn`을 사용하여 번역\n\n코드 예시:\n```javascript\nconst result = await analyzeContent();\nconsole.log(result);\n```\n\n자세한 내용은 [GitHub](https://github.com)을 참고하세요.' }
+            ];
+
+            tests.forEach(test => {
+                const element = document.getElementById(test.id);
+                if (element) {
+                    element.innerHTML = renderMarkdown(test.text);
+                }
+            });
+
+            console.log('✅ All tests rendered successfully!');
+        });
+    </script>
+</body>
+</html>

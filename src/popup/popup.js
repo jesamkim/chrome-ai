@@ -7,10 +7,10 @@ class PopupManager {
   constructor() {
     this.currentScreen = 'analysis';
     this.isConnected = false;
-    this.currentModel = 'claude-4-sonnet';
+    this.currentModel = 'claude-haiku-4.5';
     this.chatHistory = [];
     this.isSending = false; // 메시지 전송 중 플래그
-    
+
     this.init();
   }
 
@@ -156,8 +156,8 @@ class PopupManager {
 
       if (response && response.success) {
         this.isConnected = true;
-        this.currentModel = response.model || 'claude-4-sonnet';
-        this.updateConnectionStatus(true, `${response.modelName || 'Claude 4 Sonnet'} 연결됨`);
+        this.currentModel = response.model || 'claude-haiku-4.5';
+        this.updateConnectionStatus(true, `${response.modelName || 'Claude Haiku 4.5'} 연결됨`);
       } else {
         this.isConnected = false;
         this.updateConnectionStatus(false, response?.error || '연결 실패');
@@ -449,7 +449,7 @@ ${pageContent}
     if (this.analysisContent) {
       this.analysisContent.innerHTML = `
         <div class="analysis-result">
-          ${result.replace(/\n/g, '<br>')}
+          ${this.renderMarkdown(result)}
         </div>
       `;
     }
@@ -527,7 +527,7 @@ ${pageContent}
     messageDiv.className = `message ${role}`;
     messageDiv.innerHTML = `
       <div class="message-content">
-        ${content.replace(/\n/g, '<br>')}
+        ${this.renderMarkdown(content)}
       </div>
     `;
 
@@ -601,6 +601,93 @@ ${pageContent}
     if (this.sendBtn) {
       this.sendBtn.disabled = !hasText || !this.isConnected;
     }
+  }
+
+  /**
+   * 마크다운 텍스트를 HTML로 변환
+   * @param {string} text - 마크다운 형식의 텍스트
+   * @returns {string} HTML 형식의 텍스트
+   */
+  renderMarkdown(text) {
+    if (!text) return '';
+
+    // HTML 이스케이프 (XSS 방지)
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // 코드 블록 (```) - 먼저 처리하여 내부 마크다운 처리 방지
+    const codeBlocks = [];
+    html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
+      const index = codeBlocks.length;
+      codeBlocks.push(code.trim());
+      return `___CODE_BLOCK_${index}___`;
+    });
+
+    // 인라인 코드 (`)
+    const inlineCodes = [];
+    html = html.replace(/`([^`]+)`/g, (match, code) => {
+      const index = inlineCodes.length;
+      inlineCodes.push(code);
+      return `___INLINE_CODE_${index}___`;
+    });
+
+    // 굵은 글씨 (**text** or __text__)
+    html = html.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+
+    // 기울임 (*text* or _text_)
+    html = html.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+
+    // 링크 [text](url)
+    html = html.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+    // 헤딩 (# ## ###)
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+    // 순서 없는 리스트 (- or * or +)
+    html = html.replace(/^[\-\*\+] (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+    // 순서 있는 리스트 (1. 2. 3.)
+    html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+    // 인용구 (>)
+    html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+
+    // 수평선 (--- or ***)
+    html = html.replace(/^(\-\-\-|\*\*\*)$/gm, '<hr>');
+
+    // 개행 처리
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = html.replace(/\n/g, '<br>');
+
+    // 단락으로 감싸기
+    if (!html.startsWith('<')) {
+      html = '<p>' + html + '</p>';
+    }
+
+    // 코드 블록 복원
+    codeBlocks.forEach((code, index) => {
+      html = html.replace(
+        `___CODE_BLOCK_${index}___`,
+        `<pre><code>${code}</code></pre>`
+      );
+    });
+
+    // 인라인 코드 복원
+    inlineCodes.forEach((code, index) => {
+      html = html.replace(
+        `___INLINE_CODE_${index}___`,
+        `<code>${code}</code>`
+      );
+    });
+
+    return html;
   }
 
   // 공통 유틸리티 메서드들
