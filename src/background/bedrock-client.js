@@ -1,7 +1,7 @@
 /**
  * AWS Bedrock Multi-Model API 클라이언트
  * AWS CLI 인증 우선, API Key 폴백 지원
- * 지원 모델: Claude Haiku 4.5 (기본), Claude 4 Sonnet, Claude 3.7 Sonnet
+ * 지원 모델: Claude Haiku 4.5 (기본), Claude Sonnet 4.5, Claude Sonnet 4
  */
 
 // AWSAuthManager import (Chrome Extension 환경에서는 전역으로 로드됨)
@@ -19,26 +19,32 @@ class BedrockClient {
     
     // 지원 모델 정의
     this.supportedModels = {
-      'claude-3.7-sonnet': {
-        id: 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
-        name: 'Claude 3.7 Sonnet',
-        provider: 'anthropic',
-        maxTokens: 8000,
-        description: '균형잡힌 성능과 속도'
-      },
-      'claude-4-sonnet': {
-        id: 'global.anthropic.claude-sonnet-4-20250514-v1:0',
-        name: 'Claude 4 Sonnet',
-        provider: 'anthropic',
-        maxTokens: 8000,
-        description: '최신 고성능 모델'
-      },
       'claude-haiku-4.5': {
         id: 'global.anthropic.claude-haiku-4-5-20251001-v1:0',
         name: 'Claude Haiku 4.5',
         provider: 'anthropic',
         maxTokens: 8000,
-        description: '빠르고 효율적인 모델 (기본 모델)'
+        contextWindow: 200000,
+        maxOutputTokens: 64000,
+        description: '가장 빠른 모델, 준최고 수준의 지능 (기본 모델)'
+      },
+      'claude-sonnet-4.5': {
+        id: 'global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+        name: 'Claude Sonnet 4.5',
+        provider: 'anthropic',
+        maxTokens: 8000,
+        contextWindow: 200000,
+        maxOutputTokens: 64000,
+        description: 'Claude 4 모델 중 가장 빠른 고성능 모델'
+      },
+      'claude-sonnet-4': {
+        id: 'global.anthropic.claude-sonnet-4-20250514-v1:0',
+        name: 'Claude Sonnet 4',
+        provider: 'anthropic',
+        maxTokens: 8000,
+        contextWindow: 200000,
+        maxOutputTokens: 64000,
+        description: '향상된 추론과 복잡한 작업 처리'
       }
     };
 
@@ -192,6 +198,8 @@ class BedrockClient {
       name: model.name,
       provider: model.provider,
       maxTokens: model.maxTokens,
+      contextWindow: model.contextWindow,
+      maxOutputTokens: model.maxOutputTokens,
       description: model.description
     }));
   }
@@ -382,13 +390,19 @@ class BedrockClient {
 - 핵심 정보를 우선적으로 전달합니다`;
     } else if (this.currentModel === 'claude-haiku-4.5') {
       basePrompt += `\n\n현재 사용 중인 모델: ${currentModelInfo.name}
-- 빠르고 효율적인 응답 제공
+- 가장 빠른 응답 속도와 준최고 수준의 지능
 - 간결하면서도 정확한 정보 전달
-- 일상적인 질문과 간단한 분석에 최적화`;
-    } else if (this.currentModel === 'claude-4-sonnet') {
+- 일상적인 질문과 빠른 분석에 최적화`;
+    } else if (this.currentModel === 'claude-sonnet-4.5') {
       basePrompt += `\n\n현재 사용 중인 모델: ${currentModelInfo.name}
-- 최신 기능과 향상된 추론 능력을 활용합니다
-- 복잡한 분석과 상세한 설명이 가능합니다`;
+- Claude 4 모델 중 가장 빠른 고성능 모델
+- 복잡한 분석과 추론 능력 제공
+- 대부분의 작업에 최적화`;
+    } else if (this.currentModel === 'claude-sonnet-4') {
+      basePrompt += `\n\n현재 사용 중인 모델: ${currentModelInfo.name}
+- 향상된 추론과 복잡한 작업 처리
+- 깊이 있는 분석과 상세한 설명
+- 고급 작업에 적합`;
     }
 
     return basePrompt;

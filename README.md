@@ -10,7 +10,7 @@ Amazon Bedrock 기반 웹페이지 분석 AI 어시스턴트 Chrome Extension
 
 ## 🚀 주요 기능
 
-- **다중 AI 모델 지원**: Claude Haiku 4.5 (기본), Claude 4 Sonnet, Claude 3.7 Sonnet
+- **다중 AI 모델 지원**: Claude Haiku 4.5 (기본), Claude Sonnet 4.5, Claude Sonnet 4
 - **지능형 웹페이지 분석**: 현재 페이지 내용을 자동으로 분석하여 핵심 정보 추출
 - **실시간 AI 채팅**: 페이지 내용을 바탕으로 AI와 자연스러운 대화
 - **빠른 작업 도구**: 요약, 핵심 포인트 추출, 번역 등 원클릭 실행
@@ -84,7 +84,7 @@ python3 -m http.server 8080
 
 ## 📊 기술 스택
 
-- **AI 모델**: AWS Bedrock (Claude Haiku 4.5, Claude 4 Sonnet, Claude 3.7 Sonnet)
+- **AI 모델**: AWS Bedrock (Claude Haiku 4.5, Claude Sonnet 4.5, Claude Sonnet 4)
 - **플랫폼**: Chrome Extension Manifest V3
 - **인증**: Bearer Token (API Key 기반)
 - **리전**: us-west-2 (Cross-Region Inference)
@@ -92,16 +92,20 @@ python3 -m http.server 8080
 
 ## 🎯 지원 모델
 
-| 모델 | 제공자 | 특징 | 최대 토큰 |
-|------|--------|------|-----------|
-| **Claude Haiku 4.5** | Anthropic | 빠르고 효율적인 모델 **(기본)** <br>• 빠른 응답 속도<br>• 일상적인 질문과 간단한 분석에 최적화<br>• 간결하면서도 정확한 정보 전달 | 8,000 |
-| Claude 4 Sonnet | Anthropic | 최신 고성능 모델<br>• 향상된 추론 능력<br>• 복잡한 분석과 상세한 설명 가능<br>• 고급 작업에 적합 | 8,000 |
-| Claude 3.7 Sonnet | Anthropic | 균형잡힌 성능과 속도<br>• 안정적인 성능<br>• 대부분의 작업에 적합 | 8,000 |
+| 모델 | 제공자 | 최대 컨텍스트 | 최대 출력 | 특징 |
+|------|--------|--------------|-----------|------|
+| **Claude Haiku 4.5** | Anthropic | 200K 토큰 | 64K 토큰 | **가장 빠른 모델, 준최고 수준의 지능 (기본)** <br>• 초고속 응답 속도<br>• 일상적인 질문과 빠른 분석에 최적화<br>• 비용 효율적이면서도 높은 품질<br>• Extended Thinking 지원 |
+| **Claude Sonnet 4.5** | Anthropic | 200K 토큰<br>(1M beta) | 64K 토큰 | **Claude 4 모델 중 가장 빠른 고성능 모델**<br>• 뛰어난 성능과 빠른 속도의 균형<br>• 복잡한 분석과 추론 능력<br>• 대부분의 작업에 최적화<br>• Extended Thinking & Priority Tier 지원 |
+| **Claude Sonnet 4** | Anthropic | 200K 토큰<br>(1M beta) | 64K 토큰 | **향상된 추론과 복잡한 작업 처리**<br>• 고급 추론 능력<br>• 깊이 있는 분석과 상세한 설명<br>• 복잡한 문제 해결에 적합<br>• Extended Thinking & Priority Tier 지원 |
 
 **💡 모델 선택 가이드:**
-- **일반적인 사용**: Claude Haiku 4.5 (기본) - 빠른 응답과 효율성
-- **복잡한 분석**: Claude 4 Sonnet - 깊이 있는 분석과 상세한 설명
-- **안정적인 성능**: Claude 3.7 Sonnet - 검증된 성능
+- **일반적인 사용 (권장)**: **Claude Haiku 4.5** - 빠른 응답과 높은 효율성, 일상적인 모든 작업에 적합
+- **균형잡힌 성능**: **Claude Sonnet 4.5** - 속도와 성능의 최적 균형, 복잡한 분석 작업
+- **최고 수준 분석**: **Claude Sonnet 4** - 가장 깊이 있는 추론과 복잡한 문제 해결
+
+**📝 참고사항:**
+- 모든 모델은 Extended Thinking 기능을 지원하여 더욱 정확한 응답 제공
+- Sonnet 모델은 beta 헤더 사용 시 1M 토큰 컨텍스트 지원 (200K 초과 시 별도 요금)
 
 ## 📁 프로젝트 구조
 
