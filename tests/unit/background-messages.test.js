@@ -33,9 +33,9 @@ global.chrome = {
 class MockBedrockClient {
   constructor() {
     this.supportedModels = {
-      'claude-3.7-sonnet': {
-        id: 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
-        name: 'Claude 3.7 Sonnet',
+      'claude-haiku-4.5': {
+        id: 'global.anthropic.claude-haiku-4-5-20251001-v1:0',
+        name: 'Claude Haiku 4.5',
         provider: 'anthropic',
         maxTokens: 8000,
         description: '균형잡힌 성능과 속도 (기본 모델)'
@@ -125,7 +125,7 @@ describe('Background Script 메시지 처리 테스트', () => {
       
       // Storage에서 직접 현재 모델 정보 가져오기
       const result = await chrome.storage.sync.get(['selectedModel']);
-      const selectedModelKey = result.selectedModel || 'claude-3.7-sonnet';
+      const selectedModelKey = result.selectedModel || 'claude-haiku-4.5';
       
       // 모델 정보 구성
       const supportedModels = bedrockClient.getSupportedModels();
@@ -133,7 +133,7 @@ describe('Background Script 메시지 처리 테스트', () => {
       
       if (!currentModel) {
         // 기본 모델로 폴백
-        const defaultModel = supportedModels.find(model => model.key === 'claude-3.7-sonnet');
+        const defaultModel = supportedModels.find(model => model.key === 'claude-haiku-4.5');
         console.log('⚠️ 선택된 모델을 찾을 수 없음, 기본 모델 사용:', defaultModel.name);
         
         sendResponse({
@@ -170,8 +170,8 @@ describe('Background Script 메시지 처리 테스트', () => {
         success: true,
         models: expect.arrayContaining([
           expect.objectContaining({
-            key: 'claude-3.7-sonnet',
-            name: 'Claude 3.7 Sonnet',
+            key: 'claude-haiku-4.5',
+            name: 'Claude Haiku 4.5',
             provider: 'anthropic'
           })
         ])
@@ -226,8 +226,8 @@ describe('Background Script 메시지 처리 테스트', () => {
       expect(sendResponse).toHaveBeenCalledWith({
         success: true,
         model: expect.objectContaining({
-          key: 'claude-3.7-sonnet',
-          name: 'Claude 3.7 Sonnet',
+          key: 'claude-haiku-4.5',
+          name: 'Claude Haiku 4.5',
           provider: 'anthropic'
         })
       });
@@ -244,8 +244,8 @@ describe('Background Script 메시지 처리 테스트', () => {
       expect(sendResponse).toHaveBeenCalledWith({
         success: true,
         model: expect.objectContaining({
-          key: 'claude-3.7-sonnet',
-          name: 'Claude 3.7 Sonnet'
+          key: 'claude-haiku-4.5',
+          name: 'Claude Haiku 4.5'
         })
       });
     });

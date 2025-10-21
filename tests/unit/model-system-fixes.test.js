@@ -11,16 +11,16 @@ describe('모델 및 시스템 메시지 수정 테스트', () => {
     test('지원 모델 목록에 Nova 모델이 없음', () => {
       // Given - BedrockClient의 supportedModels 시뮬레이션
       const supportedModels = {
-        'claude-3.7-sonnet': {
-          id: 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
-          name: 'Claude 3.7 Sonnet',
+        'claude-haiku-4.5': {
+          id: 'global.anthropic.claude-haiku-4-5-20251001-v1:0',
+          name: 'Claude Haiku 4.5',
           provider: 'anthropic',
           maxTokens: 8000,
           description: '균형잡힌 성능과 속도 (기본 모델)'
         },
-        'claude-4-sonnet': {
+        'claude-sonnet-4': {
           id: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
-          name: 'Claude 4 Sonnet',
+          name: 'Claude Sonnet 4',
           provider: 'anthropic',
           maxTokens: 8000,
           description: '최신 고성능 모델'
@@ -31,23 +31,23 @@ describe('모델 및 시스템 메시지 수정 테스트', () => {
       expect(supportedModels).not.toHaveProperty('nova-pro');
       expect(supportedModels).not.toHaveProperty('nova-lite');
       expect(Object.keys(supportedModels)).toHaveLength(2);
-      expect(supportedModels['claude-3.7-sonnet']).toBeDefined();
-      expect(supportedModels['claude-4-sonnet']).toBeDefined();
+      expect(supportedModels['claude-haiku-4.5']).toBeDefined();
+      expect(supportedModels['claude-sonnet-4']).toBeDefined();
     });
 
     test('getSupportedModels 함수가 Claude 모델만 반환', () => {
       // Given
       const supportedModels = {
-        'claude-3.7-sonnet': {
-          id: 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
-          name: 'Claude 3.7 Sonnet',
+        'claude-haiku-4.5': {
+          id: 'global.anthropic.claude-haiku-4-5-20251001-v1:0',
+          name: 'Claude Haiku 4.5',
           provider: 'anthropic',
           maxTokens: 8000,
           description: '균형잡힌 성능과 속도 (기본 모델)'
         },
-        'claude-4-sonnet': {
+        'claude-sonnet-4': {
           id: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
-          name: 'Claude 4 Sonnet',
+          name: 'Claude Sonnet 4',
           provider: 'anthropic',
           maxTokens: 8000,
           description: '최신 고성능 모델'

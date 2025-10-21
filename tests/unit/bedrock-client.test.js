@@ -37,7 +37,7 @@ describe('BedrockClient', () => {
   describe('생성자', () => {
     test('기본 설정이 올바르게 초기화되어야 함', () => {
       expect(client.region).toBe('us-west-2');
-      expect(client.currentModel).toBe('claude-3.7-sonnet');
+      expect(client.currentModel).toBe('claude-haiku-4.5');
       expect(client.isInitialized).toBe(false);
       expect(client.baseUrl).toBe('https://bedrock-runtime.us-west-2.amazonaws.com');
     });
@@ -47,8 +47,8 @@ describe('BedrockClient', () => {
       expect(models).toHaveLength(2); // Claude 모델만 2개
       
       const modelKeys = models.map(m => m.key);
-      expect(modelKeys).toContain('claude-3.7-sonnet');
-      expect(modelKeys).toContain('claude-4-sonnet');
+      expect(modelKeys).toContain('claude-haiku-4.5');
+      expect(modelKeys).toContain('claude-sonnet-4');
     });
   });
 
@@ -66,14 +66,14 @@ describe('BedrockClient', () => {
       });
     });
 
-    test('Claude 3.7 Sonnet이 기본 모델로 포함되어야 함', () => {
+    test('Claude Haiku 4.5이 기본 모델로 포함되어야 함', () => {
       const models = client.getSupportedModels();
-      const claude37 = models.find(m => m.key === 'claude-3.7-sonnet');
+      const claude37 = models.find(m => m.key === 'claude-haiku-4.5');
       
       expect(claude37).toBeDefined();
-      expect(claude37.name).toBe('Claude 3.7 Sonnet');
+      expect(claude37.name).toBe('Claude Haiku 4.5');
       expect(claude37.provider).toBe('anthropic');
-      expect(claude37.id).toBe('us.anthropic.claude-3-7-sonnet-20250219-v1:0');
+      expect(claude37.id).toBe('global.anthropic.claude-haiku-4-5-20251001-v1:0');
     });
   });
 
@@ -81,8 +81,8 @@ describe('BedrockClient', () => {
     test('현재 선택된 모델 정보를 반환해야 함', () => {
       const currentModel = client.getCurrentModel();
       
-      expect(currentModel.key).toBe('claude-3.7-sonnet');
-      expect(currentModel.name).toBe('Claude 3.7 Sonnet');
+      expect(currentModel.key).toBe('claude-haiku-4.5');
+      expect(currentModel.name).toBe('Claude Haiku 4.5');
       expect(currentModel.provider).toBe('anthropic');
     });
   });
@@ -91,11 +91,11 @@ describe('BedrockClient', () => {
     test('유효한 모델로 변경할 수 있어야 함', async () => {
       chrome.storage.sync.set.mockResolvedValue();
       
-      await client.setModel('claude-4-sonnet');
+      await client.setModel('claude-sonnet-4');
       
-      expect(client.currentModel).toBe('claude-4-sonnet');
+      expect(client.currentModel).toBe('claude-sonnet-4');
       expect(chrome.storage.sync.set).toHaveBeenCalledWith({
-        selectedModel: 'claude-4-sonnet'
+        selectedModel: 'claude-sonnet-4'
       });
     });
 
@@ -110,7 +110,7 @@ describe('BedrockClient', () => {
     test('API Key가 있을 때 성공적으로 초기화되어야 함', async () => {
       chrome.storage.sync.get.mockResolvedValue({
         bedrockApiKey: 'test-api-key',
-        selectedModel: 'claude-3.7-sonnet'
+        selectedModel: 'claude-haiku-4.5'
       });
 
       const result = await client.initialize();
@@ -118,7 +118,7 @@ describe('BedrockClient', () => {
       expect(result).toBe(true);
       expect(client.isInitialized).toBe(true);
       expect(client.authManager.isInitialized).toBe(true);
-      expect(client.currentModel).toBe('claude-3.7-sonnet');
+      expect(client.currentModel).toBe('claude-haiku-4.5');
     });
 
     test('API Key가 없을 때 에러를 발생시켜야 함', async () => {
@@ -139,9 +139,9 @@ describe('BedrockClient', () => {
 
       await client.initialize();
 
-      expect(client.currentModel).toBe('claude-3.7-sonnet');
+      expect(client.currentModel).toBe('claude-haiku-4.5');
       expect(chrome.storage.sync.set).toHaveBeenCalledWith({
-        selectedModel: 'claude-3.7-sonnet'
+        selectedModel: 'claude-haiku-4.5'
       });
     });
   });
@@ -205,10 +205,10 @@ describe('BedrockClient', () => {
     });
 
     test('Claude 4 모델일 때 특화 지침이 포함되어야 함', async () => {
-      await client.setModel('claude-4-sonnet');
+      await client.setModel('claude-sonnet-4');
       const prompt = client.getDefaultSystemPrompt();
       
-      expect(prompt).toContain('Claude 4 Sonnet');
+      expect(prompt).toContain('Claude Sonnet 4');
       expect(prompt).toContain('최신 기능과 향상된 추론 능력');
     });
   });

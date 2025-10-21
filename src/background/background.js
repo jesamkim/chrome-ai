@@ -1,6 +1,6 @@
 /**
  * Chrome Extension Background Service Worker
- * Claude 3.7 Sonnet AI Assistant with TextContextManager and AWS Auth Manager
+ * Claude Haiku 4.5 AI Assistant with TextContextManager and AWS Auth Manager
  */
 
 // Service Worker에서 다른 스크립트들을 로드
@@ -541,15 +541,15 @@ async function handleGetCurrentModel(sendResponse) {
     
     // Storage에서 직접 현재 모델 정보 가져오기
     const result = await chrome.storage.sync.get(['selectedModel']);
-    const selectedModelKey = result.selectedModel || 'claude-3.7-sonnet';
-    
+    const selectedModelKey = result.selectedModel || 'claude-haiku-4.5';
+
     // 모델 정보 구성
     const supportedModels = bedrockClient.getSupportedModels();
     const currentModel = supportedModels.find(model => model.key === selectedModelKey);
-    
+
     if (!currentModel) {
       // 기본 모델로 폴백
-      const defaultModel = supportedModels.find(model => model.key === 'claude-3.7-sonnet');
+      const defaultModel = supportedModels.find(model => model.key === 'claude-haiku-4.5');
       console.log('⚠️ 선택된 모델을 찾을 수 없음, 기본 모델 사용:', defaultModel.name);
       
       sendResponse({

@@ -44,14 +44,14 @@ describe('Bedrock API 통합 테스트', () => {
     // API Key 설정 모킹
     chrome.storage.sync.get.mockResolvedValue({
       bedrockApiKey: TEST_API_KEY,
-      selectedModel: 'claude-3.7-sonnet'
+      selectedModel: 'claude-haiku-4.5'
     });
     
     await client.initialize();
     jest.clearAllMocks();
   });
 
-  describe('Claude 3.7 Sonnet 모델 테스트', () => {
+  describe('Claude Haiku 4.5 모델 테스트', () => {
     test('기본 대화 테스트', async () => {
       const messages = [{
         role: 'user',
@@ -99,9 +99,9 @@ Anthropic의 Claude, Amazon의 Titan 등 다양한 모델을 지원합니다.
     }, 30000);
   });
 
-  describe('Claude 4 Sonnet 모델 테스트', () => {
+  describe('Claude Sonnet 4 모델 테스트', () => {
     beforeEach(async () => {
-      await client.setModel('claude-4-sonnet');
+      await client.setModel('claude-sonnet-4');
     });
 
     test('Claude 4 기본 대화 테스트', async () => {
@@ -197,7 +197,7 @@ Anthropic의 Claude, Amazon의 Titan 등 다양한 모델을 지원합니다.
       const badClient = new BedrockClient();
       chrome.storage.sync.get.mockResolvedValueOnce({
         bedrockApiKey: 'invalid-key',
-        selectedModel: 'claude-3.7-sonnet'
+        selectedModel: 'claude-haiku-4.5'
       });
       
       await badClient.initialize();
@@ -237,7 +237,7 @@ Anthropic의 Claude, Amazon의 Titan 등 다양한 모델을 지원합니다.
         content: '1부터 10까지 숫자를 나열해주세요.'
       }];
 
-      const models = ['claude-3.7-sonnet', 'claude-4-sonnet', 'nova-pro', 'nova-lite'];
+      const models = ['claude-haiku-4.5', 'claude-sonnet-4', 'nova-pro', 'nova-lite'];
       const results = {};
 
       for (const modelKey of models) {

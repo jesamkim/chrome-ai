@@ -158,8 +158,8 @@ describe('Chrome Extension 구조 검증', () => {
     expect(bedrockContent).toContain('async invokeClaude(');
 
     // 지원 모델들 확인
-    expect(bedrockContent).toContain('claude-3.7-sonnet');
-    expect(bedrockContent).toContain('claude-4-sonnet');
+    expect(bedrockContent).toContain('claude-haiku-4.5');
+    expect(bedrockContent).toContain('claude-sonnet-4');
     // Nova 모델은 제거됨
 
     console.log('✅ Bedrock 클라이언트 구조 확인 완료');

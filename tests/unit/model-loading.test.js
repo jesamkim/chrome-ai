@@ -55,14 +55,14 @@ describe('모델 로딩 테스트', () => {
       });
     });
 
-    test('Claude 3.7 Sonnet이 기본 모델로 포함되어야 함', () => {
+    test('Claude Haiku 4.5이 기본 모델로 포함되어야 함', () => {
       // When
       const models = bedrockClient.getSupportedModels();
 
       // Then
-      const claudeModel = models.find(model => model.key === 'claude-3.7-sonnet');
+      const claudeModel = models.find(model => model.key === 'claude-haiku-4.5');
       expect(claudeModel).toBeDefined();
-      expect(claudeModel.name).toBe('Claude 3.7 Sonnet');
+      expect(claudeModel.name).toBe('Claude Haiku 4.5');
       expect(claudeModel.provider).toBe('anthropic');
     });
 
@@ -72,8 +72,8 @@ describe('모델 로딩 테스트', () => {
 
       // Then
       const modelKeys = models.map(model => model.key);
-      expect(modelKeys).toContain('claude-3.7-sonnet');
-      expect(modelKeys).toContain('claude-4-sonnet');
+      expect(modelKeys).toContain('claude-haiku-4.5');
+      expect(modelKeys).toContain('claude-sonnet-4');
       // Nova 모델은 제거됨
     });
   });
@@ -85,11 +85,11 @@ describe('모델 로딩 테스트', () => {
 
       // When
       const models = bedrockClient.getSupportedModels();
-      const defaultModel = models.find(model => model.key === 'claude-3.7-sonnet');
+      const defaultModel = models.find(model => model.key === 'claude-haiku-4.5');
 
       // Then
       expect(defaultModel).toBeDefined();
-      expect(defaultModel.key).toBe('claude-3.7-sonnet');
+      expect(defaultModel.key).toBe('claude-haiku-4.5');
     });
   });
 
@@ -117,17 +117,17 @@ describe('모델 로딩 테스트', () => {
 
     test('GET_CURRENT_MODEL 메시지 처리 (Storage에서 직접)', async () => {
       // Given
-      chrome.storage.sync.get.mockResolvedValue({ selectedModel: 'claude-4-sonnet' });
+      chrome.storage.sync.get.mockResolvedValue({ selectedModel: 'claude-sonnet-4' });
       const client = new BedrockClient();
       
       // When
       const models = client.getSupportedModels();
-      const selectedModel = models.find(model => model.key === 'claude-4-sonnet');
+      const selectedModel = models.find(model => model.key === 'claude-sonnet-4');
       
       // Then
       expect(selectedModel).toBeDefined();
-      expect(selectedModel.key).toBe('claude-4-sonnet');
-      expect(selectedModel.name).toBe('Claude 4 Sonnet');
+      expect(selectedModel.key).toBe('claude-sonnet-4');
+      expect(selectedModel.name).toBe('Claude Sonnet 4');
     });
 
     test('GET_CURRENT_MODEL 기본값 처리', async () => {
@@ -137,11 +137,11 @@ describe('모델 로딩 테스트', () => {
       
       // When
       const models = client.getSupportedModels();
-      const defaultModel = models.find(model => model.key === 'claude-3.7-sonnet');
+      const defaultModel = models.find(model => model.key === 'claude-haiku-4.5');
       
       // Then
       expect(defaultModel).toBeDefined();
-      expect(defaultModel.key).toBe('claude-3.7-sonnet');
+      expect(defaultModel.key).toBe('claude-haiku-4.5');
     });
   });
 });
