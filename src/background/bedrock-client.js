@@ -35,7 +35,7 @@ class BedrockClient {
         maxTokens: 8000,
         contextWindow: 200000,
         maxOutputTokens: 64000,
-        description: 'Claude 4 모델 중 가장 빠른 고성능 모델'
+        description: '최신 최고 성능 모델, 가장 진보된 추론 능력'
       },
       'claude-sonnet-4': {
         id: 'global.anthropic.claude-sonnet-4-20250514-v1:0',
@@ -44,7 +44,7 @@ class BedrockClient {
         maxTokens: 8000,
         contextWindow: 200000,
         maxOutputTokens: 64000,
-        description: '향상된 추론과 복잡한 작업 처리'
+        description: '균형잡힌 고성능 모델, 향상된 추론 능력'
       }
     };
 
@@ -395,14 +395,14 @@ class BedrockClient {
 - 일상적인 질문과 빠른 분석에 최적화`;
     } else if (this.currentModel === 'claude-sonnet-4.5') {
       basePrompt += `\n\n현재 사용 중인 모델: ${currentModelInfo.name}
-- Claude 4 모델 중 가장 빠른 고성능 모델
-- 복잡한 분석과 추론 능력 제공
-- 대부분의 작업에 최적화`;
+- 최신 최고 성능 모델, Claude 4 제품군 중 가장 진보됨
+- 최고 수준의 추론과 분석 능력
+- 복잡한 문제 해결과 깊이 있는 대화에 최적화`;
     } else if (this.currentModel === 'claude-sonnet-4') {
       basePrompt += `\n\n현재 사용 중인 모델: ${currentModelInfo.name}
+- 균형잡힌 고성능 모델
 - 향상된 추론과 복잡한 작업 처리
-- 깊이 있는 분석과 상세한 설명
-- 고급 작업에 적합`;
+- 대부분의 작업에 적합`;
     }
 
     return basePrompt;

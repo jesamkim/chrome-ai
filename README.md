@@ -95,13 +95,13 @@ python3 -m http.server 8080
 | 모델 | 제공자 | 최대 컨텍스트 | 최대 출력 | 특징 |
 |------|--------|--------------|-----------|------|
 | **Claude Haiku 4.5** | Anthropic | 200K 토큰 | 64K 토큰 | **가장 빠른 모델, 준최고 수준의 지능 (기본)** <br>• 초고속 응답 속도<br>• 일상적인 질문과 빠른 분석에 최적화<br>• 비용 효율적이면서도 높은 품질<br>• Extended Thinking 지원 |
-| **Claude Sonnet 4.5** | Anthropic | 200K 토큰<br>(1M beta) | 64K 토큰 | **Claude 4 모델 중 가장 빠른 고성능 모델**<br>• 뛰어난 성능과 빠른 속도의 균형<br>• 복잡한 분석과 추론 능력<br>• 대부분의 작업에 최적화<br>• Extended Thinking & Priority Tier 지원 |
-| **Claude Sonnet 4** | Anthropic | 200K 토큰<br>(1M beta) | 64K 토큰 | **향상된 추론과 복잡한 작업 처리**<br>• 고급 추론 능력<br>• 깊이 있는 분석과 상세한 설명<br>• 복잡한 문제 해결에 적합<br>• Extended Thinking & Priority Tier 지원 |
+| **Claude Sonnet 4.5** | Anthropic | 200K 토큰<br>(1M beta) | 64K 토큰 | **최신 최고 성능 모델**<br>• Claude 4 제품군 중 가장 진보된 모델<br>• 최고 수준의 추론과 분석 능력<br>• 복잡한 문제 해결과 깊이 있는 대화<br>• Extended Thinking & Priority Tier 지원 |
+| **Claude Sonnet 4** | Anthropic | 200K 토큰<br>(1M beta) | 64K 토큰 | **균형잡힌 고성능 모델**<br>• 향상된 추론 능력<br>• 복잡한 분석과 상세한 설명<br>• 대부분의 작업에 적합<br>• Extended Thinking & Priority Tier 지원 |
 
 **💡 모델 선택 가이드:**
 - **일반적인 사용 (권장)**: **Claude Haiku 4.5** - 빠른 응답과 높은 효율성, 일상적인 모든 작업에 적합
-- **균형잡힌 성능**: **Claude Sonnet 4.5** - 속도와 성능의 최적 균형, 복잡한 분석 작업
-- **최고 수준 분석**: **Claude Sonnet 4** - 가장 깊이 있는 추론과 복잡한 문제 해결
+- **최고 수준 성능**: **Claude Sonnet 4.5** - 가장 진보된 모델, 최고 수준의 추론과 복잡한 문제 해결
+- **균형잡힌 성능**: **Claude Sonnet 4** - 향상된 분석 능력, 대부분의 복잡한 작업에 적합
 
 **📝 참고사항:**
 - 모든 모델은 Extended Thinking 기능을 지원하여 더욱 정확한 응답 제공
