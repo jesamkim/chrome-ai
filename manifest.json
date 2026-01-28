@@ -1,15 +1,16 @@
 {
   "manifest_version": 3,
   "name": "AWS AI Assistant",
-  "version": "1.0.0",
-  "description": "Amazon Bedrock 기반 웹페이지 분석 AI 어시스턴트",
+  "version": "2.0.1",
+  "description": "Amazon Bedrock 기반 Side Panel AI 어시스턴트 - 채팅 히스토리 저장, 세션 관리",
   
   "permissions": [
     "activeTab",
     "storage",
     "scripting",
     "contextMenus",
-    "tabs"
+    "tabs",
+    "sidePanel"
   ],
   
   "host_permissions": [
@@ -33,8 +34,11 @@
   }],
   
   "action": {
-    "default_popup": "src/popup/popup.html",
     "default_title": "AWS AI Assistant"
+  },
+
+  "side_panel": {
+    "default_path": "src/sidepanel/sidepanel.html"
   },
   
   "options_page": "src/options/options.html",

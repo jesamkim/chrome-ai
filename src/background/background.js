@@ -13,18 +13,30 @@ let bedrockClient = null;
 let textContextManager = null;
 let activeSessions = new Map();
 
+// API 인증 캐시
+let authCache = {
+  isValid: false,
+  lastChecked: 0,
+  ttl: 5 * 60 * 1000, // 5분
+  modelInfo: null
+};
+
 /**
  * Extension 설치/업데이트 시 초기화
  */
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('🚀 Claude AI Assistant 설치됨:', details.reason);
-  
+
+  // Side Panel 자동 열기 설정
+  await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+  console.log('✅ Side Panel 자동 열기 설정 완료');
+
   // TextContextManager 먼저 초기화 (독립적)
   await initializeTextContextManager();
-  
+
   // 기본 설정 초기화
   await initializeDefaultSettings();
-  
+
   // 컨텍스트 메뉴 생성
   createContextMenus();
 });
@@ -257,36 +269,59 @@ async function handleInitializeBedrock(sendResponse) {
 }
 
 /**
- * 연결 테스트 처리
+ * 연결 테스트 처리 (캐싱 포함)
  */
 async function handleTestConnection(sendResponse) {
   try {
-    console.log('🔍 연결 테스트 시작');
-    
-    // 항상 새로운 클라이언트로 테스트 (기존 초기화 상태와 무관)
+    const now = Date.now();
+
+    // 캐시 유효성 확인
+    if (authCache.isValid && (now - authCache.lastChecked) < authCache.ttl) {
+      console.log('✅ 캐시된 인증 정보 사용');
+      sendResponse({
+        success: true,
+        cached: true,
+        ...authCache.modelInfo
+      });
+      return;
+    }
+
+    console.log('🔍 새로운 연결 테스트 시작');
+
+    // 새로운 클라이언트로 테스트
     const testClient = new BedrockClient();
     console.log('✅ BedrockClient 인스턴스 생성 완료');
-    
+
     console.log('🔧 BedrockClient 초기화 시작');
     await testClient.initialize();
     console.log('✅ BedrockClient 초기화 완료');
-    
+
     console.log('🔗 연결 테스트 실행');
     const result = await testClient.testConnection();
     console.log('✅ 연결 테스트 결과:', result);
-    
-    // 테스트 성공 시 전역 클라이언트 업데이트
+
+    // 테스트 성공 시 캐시 및 전역 클라이언트 업데이트
     if (result.success) {
       bedrockClient = testClient;
-      console.log('✅ 전역 클라이언트 업데이트 완료');
+      authCache.isValid = true;
+      authCache.lastChecked = now;
+      authCache.modelInfo = {
+        model: result.model,
+        modelName: result.modelName
+      };
+      console.log('✅ 전역 클라이언트 및 캐시 업데이트 완료');
+    } else {
+      // 실패 시 캐시 무효화
+      authCache.isValid = false;
     }
-    
+
     sendResponse(result);
   } catch (error) {
     console.error('❌ 연결 테스트 실패:', error);
-    sendResponse({ 
-      success: false, 
-      error: error.message 
+    authCache.isValid = false; // 오류 시 캐시 무효화
+    sendResponse({
+      success: false,
+      error: error.message
     });
   }
 }

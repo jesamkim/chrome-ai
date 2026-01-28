@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AWS AI Assistant</title>
-    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="sidepanel.css">
 </head>
 <body>
-    <div class="popup-container">
+    <div class="sidepanel-container">
         <!-- 헤더 -->
-        <header class="popup-header">
+        <header class="sidepanel-header">
             <div class="header-content">
                 <h1><img src="../assets/icons/icon16.png" alt="AWS AI" class="header-icon"> AWS AI</h1>
                 <div class="header-actions">
@@ -24,7 +24,7 @@
         </header>
 
         <!-- 메인 콘텐츠 -->
-        <main class="popup-main">
+        <main class="sidepanel-main">
             <!-- API Key 설정 필요 화면 -->
             <div id="setupScreen" class="screen" style="display: none;">
                 <div class="setup-content">
@@ -82,14 +82,31 @@
                 <div class="chat-header">
                     <button id="backToAnalysisBtn" class="back-btn">← 뒤로</button>
                     <h3>💬 AI와 대화</h3>
-                    <button id="clearChatBtn" class="icon-btn" title="대화 초기화">🗑️</button>
+                    <div class="header-actions">
+                        <button id="sessionsBtn" class="icon-btn" title="대화 세션">📋</button>
+                        <button id="clearChatBtn" class="icon-btn" title="대화 초기화">🗑️</button>
+                    </div>
+                </div>
+
+                <!-- 세션 목록 사이드바 -->
+                <div id="sessionsSidebar" class="sessions-sidebar" style="display: none;">
+                    <div class="sessions-header">
+                        <h4>대화 세션</h4>
+                        <button id="closeSessionsBtn" class="icon-btn">✕</button>
+                    </div>
+                    <div class="sessions-search">
+                        <input type="text" id="sessionsSearch" placeholder="세션 검색...">
+                    </div>
+                    <div class="sessions-list" id="sessionsList">
+                        <div class="sessions-empty">저장된 세션이 없습니다</div>
+                    </div>
                 </div>
 
                 <div class="chat-messages" id="chatMessages">
                     <div class="welcome-message">
                         <div class="message assistant">
                             <div class="message-content">
-                                안녕하세요! 현재 페이지에 대해 궁금한 것이 있으시면 언제든 물어보세요. 😊
+                                안녕하세요! 현재 페이지에 대해 궁금한 것이 있으시면 언제든 물어보세요.
                             </div>
                         </div>
                     </div>
@@ -97,7 +114,7 @@
 
                 <div class="chat-input-container">
                     <div class="chat-input-wrapper">
-                        <textarea id="chatInput" placeholder="현재 페이지에 대해 질문해보세요..." rows="1"></textarea>
+                        <textarea id="chatInput" placeholder="현재 페이지에 대해 질문해보세요..." rows="1" autocomplete="off" spellcheck="false"></textarea>
                         <button id="sendBtn" class="send-btn" disabled>
                             <span class="send-icon">📤</span>
                         </button>
@@ -118,7 +135,7 @@
         </main>
 
         <!-- 푸터 -->
-        <footer class="popup-footer">
+        <footer class="sidepanel-footer">
             <div class="footer-info">
                 <span class="model-info">AWS AI Assistant</span>
                 <span class="version-info">v2.0.1</span>
@@ -126,6 +143,6 @@
         </footer>
     </div>
 
-    <script src="popup.js"></script>
+    <script src="sidepanel.js"></script>
 </body>
 </html>
